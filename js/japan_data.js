@@ -8,6 +8,7 @@ const PREFECTURE_DATA = [
     {
         id: "hokkaido",
         name: "北海道",
+        kana: "ほっかいどう",
         region: "ホッカイドー",
         capital: "札幌市（さっぽろし）",
         specialty: "じゃがいも、牛乳、カニ",
@@ -18,6 +19,7 @@ const PREFECTURE_DATA = [
     {
         id: "aomori",
         name: "青森県",
+        kana: "あおもりけん",
         region: "トウホク",
         capital: "青森市（あおもりし）",
         specialty: "りんご、ホタテ、にんにく",
@@ -28,6 +30,7 @@ const PREFECTURE_DATA = [
     {
         id: "iwate",
         name: "岩手県",
+        kana: "いわてけん",
         region: "トウホク",
         capital: "盛岡市（もりおかし）",
         specialty: "わんこそば、南部鉄器",
@@ -38,6 +41,7 @@ const PREFECTURE_DATA = [
     {
         id: "miyagi",
         name: "宮城県",
+        kana: "みやぎけん",
         region: "トウホク",
         capital: "仙台市（せんだいし）",
         specialty: "牛タン、笹かまぼこ",
@@ -48,6 +52,7 @@ const PREFECTURE_DATA = [
     {
         id: "akita",
         name: "秋田県",
+        kana: "あきたけん",
         region: "トウホク",
         capital: "秋田市（あきたし）",
         specialty: "きりたんぽ、あきたこまち",
@@ -58,6 +63,7 @@ const PREFECTURE_DATA = [
     {
         id: "yamagata",
         name: "山形県",
+        kana: "やまがたけん",
         region: "トウホク",
         capital: "山形市（やまがたし）",
         specialty: "さくらんぼ、米沢牛",
@@ -68,6 +74,7 @@ const PREFECTURE_DATA = [
     {
         id: "fukushima",
         name: "福島県",
+        kana: "ふくしまけん",
         region: "トウホク",
         capital: "福島市（ふくしまし）",
         specialty: "桃、喜多方ラーメン",
@@ -78,6 +85,7 @@ const PREFECTURE_DATA = [
     {
         id: "ibaraki",
         name: "茨城県",
+        kana: "いばらきけん",
         region: "カントー",
         capital: "水戸市（みとし）",
         specialty: "納豆、ほしいも",
@@ -88,6 +96,7 @@ const PREFECTURE_DATA = [
     {
         id: "tochigi",
         name: "栃木県",
+        kana: "とちぎけん",
         region: "カントー",
         capital: "宇都宮市（うつのみやし）",
         specialty: "餃子、いちご",
@@ -98,6 +107,7 @@ const PREFECTURE_DATA = [
     {
         id: "gunma",
         name: "群馬県",
+        kana: "ぐんまけん",
         region: "カントー",
         capital: "前橋市（まえばしし）",
         specialty: "蒟蒻、下仁田ねぎ",
@@ -108,6 +118,7 @@ const PREFECTURE_DATA = [
     {
         id: "saitama",
         name: "埼玉県",
+        kana: "さいたまけん",
         region: "カントー",
         capital: "さいたま市",
         specialty: "深谷ねぎ、草加せんべい",
@@ -118,6 +129,7 @@ const PREFECTURE_DATA = [
     {
         id: "chiba",
         name: "千葉県",
+        kana: "ちばけん",
         region: "カントー",
         capital: "千葉市（ちばし）",
         specialty: "落花生、びわ",
@@ -128,6 +140,7 @@ const PREFECTURE_DATA = [
     {
         id: "tokyo",
         name: "東京都",
+        kana: "とうきょうと",
         region: "カントー",
         capital: "新宿区（しんじゅくく）",
         specialty: "もんじゃ焼き、人形焼",
@@ -138,6 +151,7 @@ const PREFECTURE_DATA = [
     {
         id: "kanagawa",
         name: "神奈川県",
+        kana: "かながわけん",
         region: "カントー",
         capital: "横浜市（よこはまし）",
         specialty: "シウマイ、鎌倉ハム",
@@ -148,6 +162,7 @@ const PREFECTURE_DATA = [
     {
         id: "niigata",
         name: "新潟県",
+        kana: "にいがたけん",
         region: "チュウブ",
         capital: "新潟市（にいがたし）",
         specialty: "魚沼産コシヒカリ、笹団子",
@@ -158,6 +173,7 @@ const PREFECTURE_DATA = [
     {
         id: "toyama",
         name: "富山県",
+        kana: "とやまけん",
         region: "チュウブ",
         capital: "富山市（とやまし）",
         specialty: "ホタルイカ、ます寿司",
@@ -168,6 +184,7 @@ const PREFECTURE_DATA = [
     {
         id: "ishikawa",
         name: "石川県",
+        kana: "いしかわけん",
         region: "チュウブ",
         capital: "金沢市（かなざわし）",
         specialty: "加賀友禅、輪島塗",
@@ -178,6 +195,7 @@ const PREFECTURE_DATA = [
     {
         id: "fukui",
         name: "福井県",
+        kana: "ふくいけん",
         region: "チュウブ",
         capital: "福井市（ふくいし）",
         specialty: "越前ガニ、羽二重餅",
@@ -188,6 +206,7 @@ const PREFECTURE_DATA = [
     {
         id: "yamanashi",
         name: "山梨県",
+        kana: "やまなしけん",
         region: "チュウブ",
         capital: "甲府市（こうふし）",
         specialty: "ぶどう、ほうとう",
@@ -198,6 +217,7 @@ const PREFECTURE_DATA = [
     {
         id: "nagano",
         name: "長野県",
+        kana: "ながのけん",
         region: "チュウブ",
         capital: "長野市（ながのし）",
         specialty: "信州そば、おやき",
@@ -208,6 +228,7 @@ const PREFECTURE_DATA = [
     {
         id: "gifu",
         name: "岐阜県",
+        kana: "ぎふけん",
         region: "チュウブ",
         capital: "岐阜市（ぎふし）",
         specialty: "飛騨牛、鮎",
@@ -218,6 +239,7 @@ const PREFECTURE_DATA = [
     {
         id: "shizuoka",
         name: "静岡県",
+        kana: "しずおかけん",
         region: "チュウブ",
         capital: "静岡市（しずおかし）",
         specialty: "お茶、うなぎ、わさび",
@@ -228,6 +250,7 @@ const PREFECTURE_DATA = [
     {
         id: "aichi",
         name: "愛知県",
+        kana: "あいちけん",
         region: "チュウブ",
         capital: "名古屋市（なごやし）",
         specialty: "キャベツ、みそかつ",
@@ -238,6 +261,7 @@ const PREFECTURE_DATA = [
     {
         id: "mie",
         name: "三重県",
+        kana: "みえけん",
         region: "キンキ",
         capital: "津市（つし）",
         specialty: "松阪牛、伊勢エビ",
@@ -248,6 +272,7 @@ const PREFECTURE_DATA = [
     {
         id: "shiga",
         name: "滋賀県",
+        kana: "しがけん",
         region: "キンキ",
         capital: "大津市（おおつし）",
         specialty: "近江牛、ふなずし",
@@ -258,6 +283,7 @@ const PREFECTURE_DATA = [
     {
         id: "kyoto",
         name: "京都府",
+        kana: "きょうとふ",
         region: "キンキ",
         capital: "京都市（きょうとし）",
         specialty: "八ツ橋、宇治茶",
@@ -268,6 +294,7 @@ const PREFECTURE_DATA = [
     {
         id: "osaka",
         name: "大阪府",
+        kana: "おおさかふ",
         region: "キンキ",
         capital: "大阪市（おおさかし）",
         specialty: "たこ焼き、お好み焼き",
@@ -278,6 +305,7 @@ const PREFECTURE_DATA = [
     {
         id: "hyogo",
         name: "兵庫県",
+        kana: "ひょうごけん",
         region: "キンキ",
         capital: "神戸市（こうべし）",
         specialty: "神戸牛、明石焼",
@@ -288,6 +316,7 @@ const PREFECTURE_DATA = [
     {
         id: "nara",
         name: "奈良県",
+        kana: "ならけん",
         region: "キンキ",
         capital: "奈良市（ならし）",
         specialty: "柿の葉寿司、奈良漬",
@@ -298,6 +327,7 @@ const PREFECTURE_DATA = [
     {
         id: "wakayama",
         name: "和歌山県",
+        kana: "わかやまけん",
         region: "キンキ",
         capital: "和歌山市（わかやまし）",
         specialty: "有田みかん、梅干し",
@@ -308,6 +338,7 @@ const PREFECTURE_DATA = [
     {
         id: "tottori",
         name: "鳥取県",
+        kana: "とっとりけん",
         region: "チュウゴク",
         capital: "鳥取市（とっとりし）",
         specialty: "二十世紀梨、らっきょう",
@@ -318,6 +349,7 @@ const PREFECTURE_DATA = [
     {
         id: "shimane",
         name: "島根県",
+        kana: "しまねけん",
         region: "チュウゴク",
         capital: "松江市（まつえし）",
         specialty: "出雲そば、しじみ",
@@ -328,6 +360,7 @@ const PREFECTURE_DATA = [
     {
         id: "okayama",
         name: "岡山県",
+        kana: "おかやまけん",
         region: "チュウゴク",
         capital: "岡山市（おかやまし）",
         specialty: "きびだんご、白桃",
@@ -338,6 +371,7 @@ const PREFECTURE_DATA = [
     {
         id: "hiroshima",
         name: "広島県",
+        kana: "ひろしまけん",
         region: "チュウゴク",
         capital: "広島市（ひろしまし）",
         specialty: "もみじ饅頭、牡蠣",
@@ -348,6 +382,7 @@ const PREFECTURE_DATA = [
     {
         id: "yamaguchi",
         name: "山口県",
+        kana: "やまぐちけん",
         region: "チュウゴク",
         capital: "山口市（やまぐちし）",
         specialty: "ふぐ刺し、ういろう",
@@ -358,6 +393,7 @@ const PREFECTURE_DATA = [
     {
         id: "tokushima",
         name: "徳島県",
+        kana: "とくしまけん",
         region: "シコク",
         capital: "徳島市（とくしまし）",
         specialty: "すだち、徳島ラーメン",
@@ -368,6 +404,7 @@ const PREFECTURE_DATA = [
     {
         id: "kagawa",
         name: "香川県",
+        kana: "かがわけん",
         region: "シコク",
         capital: "高松市（たかまつし）",
         specialty: "讃岐うどん、骨付鳥",
@@ -378,6 +415,7 @@ const PREFECTURE_DATA = [
     {
         id: "ehime",
         name: "愛媛県",
+        kana: "えひめけん",
         region: "シコク",
         capital: "松山市（まつやまし）",
         specialty: "タルト、いよかん",
@@ -388,6 +426,7 @@ const PREFECTURE_DATA = [
     {
         id: "kochi",
         name: "高知県",
+        kana: "こうちけん",
         region: "シコク",
         capital: "高知市（こうちし）",
         specialty: "カツオのたたき、柚子",
@@ -398,6 +437,7 @@ const PREFECTURE_DATA = [
     {
         id: "fukuoka",
         name: "福岡県",
+        kana: "ふくおかけん",
         region: "キュウシュー",
         capital: "福岡市（ふくおかし）",
         specialty: "辛子明太子、博多ラーメン",
@@ -408,6 +448,7 @@ const PREFECTURE_DATA = [
     {
         id: "saga",
         name: "佐賀県",
+        kana: "さがけん",
         region: "キュウシュー",
         capital: "佐賀市（さがし）",
         specialty: "有田焼、佐賀牛",
@@ -418,6 +459,7 @@ const PREFECTURE_DATA = [
     {
         id: "nagasaki",
         name: "長崎県",
+        kana: "ながさきけん",
         region: "キュウシュー",
         capital: "長崎市（ながさきし）",
         specialty: "カステラ、ちゃんぽん",
@@ -428,6 +470,7 @@ const PREFECTURE_DATA = [
     {
         id: "kumamoto",
         name: "熊本県",
+        kana: "くまもとけん",
         region: "キュウシュー",
         capital: "熊本市（くまもとし）",
         specialty: "馬刺し、いきなり団子",
@@ -438,6 +481,7 @@ const PREFECTURE_DATA = [
     {
         id: "oita",
         name: "大分県",
+        kana: "おおいたけん",
         region: "キュウシュー",
         capital: "大分市（おおいたし）",
         specialty: "かぼす、とり天",
@@ -448,6 +492,7 @@ const PREFECTURE_DATA = [
     {
         id: "miyazaki",
         name: "宮崎県",
+        kana: "みやざきけん",
         region: "キュウシュー",
         capital: "宮崎市（みやざきし）",
         specialty: "マンゴー、チキン南蛮",
@@ -458,6 +503,7 @@ const PREFECTURE_DATA = [
     {
         id: "kagoshima",
         name: "鹿児島県",
+        kana: "かごしまけん",
         region: "キュウシュー",
         capital: "鹿児島市",
         specialty: "さつまいも、黒豚",
@@ -468,6 +514,7 @@ const PREFECTURE_DATA = [
     {
         id: "okinawa",
         name: "沖縄県",
+        kana: "おきなわけん",
         region: "キュウシュー",
         capital: "那覇市（なはし）",
         specialty: "ゴーヤ、サーターアンダギー",

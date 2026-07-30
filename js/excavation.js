@@ -261,7 +261,6 @@ function scratch(event) {
     updateScoreDisplay();
 }
 
-// ツール（ハンマー/タガネ）の破壊半径エリア内にパーツが含まれているかを領域判定し、巻き込んでダメージ
 function checkAreaDamageFossil(centerX, centerY, checkRadius) {
     if (!targetMaskData) return;
 
@@ -269,7 +268,7 @@ function checkAreaDamageFossil(centerX, centerY, checkRadius) {
     const startY = Math.max(0, Math.floor(centerY - checkRadius));
     const endX = Math.min(topCanvas.width - 1, Math.ceil(centerX + checkRadius));
     const endY = Math.min(topCanvas.height - 1, Math.ceil(centerY + checkRadius));
-    const step = 4; // 高速サンプリング
+    const step = 4;
 
     let hasTargetInArea = false;
     let hitX = centerX;
@@ -672,6 +671,21 @@ function confirmAbort() {
     }
 }
 
+function captureExcavationResult() {
+    const snapshotCanvas = document.createElement('canvas');
+    snapshotCanvas.width = underCanvas.width;
+    snapshotCanvas.height = underCanvas.height;
+    const sCtx = snapshotCanvas.getContext('2d');
+
+    // 欠けた化石層を含んだ画像レイヤー
+    sCtx.drawImage(fossilLayerCanvas, 0, 0);
+
+    // 取りきれていない残り岩レイヤーを合成
+    sCtx.drawImage(topCanvas, 0, 0);
+
+    return snapshotCanvas.toDataURL('image/png');
+}
+
 function finishExcavation() {
     clearInterval(excavationTimer);
     if (fragmentAnimFrame) cancelAnimationFrame(fragmentAnimFrame);
@@ -682,7 +696,16 @@ function finishExcavation() {
     const score = excavationScore;
     const reward = Math.round(score * 2.5);
     const previousScore = playerStats.excavationRates[activePrefecture.id] || 0;
-    if (score > previousScore) playerStats.excavationRates[activePrefecture.id] = score;
+    
+    if (score > previousScore) {
+        playerStats.excavationRates[activePrefecture.id] = score;
+    }
+
+    // 発掘回数の加算
+    playerStats.excavationCounts[activePrefecture.id] = (playerStats.excavationCounts[activePrefecture.id] || 0) + 1;
+
+    // リアルな発掘結果（欠けたパーツ・残り岩）を記録保存
+    playerStats.excavationImages[activePrefecture.id] = captureExcavationResult();
 
     playerStats.gold += reward;
     saveGame();

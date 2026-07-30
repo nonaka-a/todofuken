@@ -126,12 +126,12 @@
         <div id="encyclopedia-modal" class="modal-overlay">
             <div class="modal-window card-window">
                 <div class="modal-header">
-                    <h2 id="modal-pref-name">都道府県名</h2>
+                    <h2><span id="modal-pref-name">都道府県名</span><span id="modal-pref-kana" class="pref-title-ruby">【】</span></h2>
                     <button class="btn-close" onclick="closeEncyclopedia()">とじる</button>
                 </div>
                 <div class="card-body">
                     <div class="encyclopedia-visual">
-                        <canvas id="modal-canvas" width="300" height="240"></canvas>
+                        <canvas id="modal-canvas" width="800" height="320"></canvas>
                     </div>
 
                     <div class="info-grid">
@@ -140,6 +140,7 @@
                             <p><span class="label">県庁所在地:</span> <span id="modal-capital">-</span></p>
                             <p><span class="label">ちほう:</span> <span id="modal-region">-</span></p>
                             <p><span class="label">さいこう完成度:</span> <span id="modal-completion-rate">0%</span></p>
+                            <p><span class="label">はっくつ回数:</span> <span id="modal-excavation-count">0回</span></p>
                         </div>
                         <div>
                             <div class="card-section-title">ちいきデータ</div>

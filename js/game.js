@@ -1,6 +1,8 @@
 let playerStats = {
     gold: 500,
     excavationRates: {},
+    excavationCounts: {},
+    excavationImages: {},
     toolLevels: {
         hammer: 1,
         brush: 1,
@@ -41,9 +43,15 @@ async function initGame() {
         }
     }
 
+    if (!playerStats.excavationCounts) playerStats.excavationCounts = {};
+    if (!playerStats.excavationImages) playerStats.excavationImages = {};
+
     PREFECTURE_DATA.forEach(p => {
         if (playerStats.excavationRates[p.id] === undefined) {
             playerStats.excavationRates[p.id] = 0;
+        }
+        if (playerStats.excavationCounts[p.id] === undefined) {
+            playerStats.excavationCounts[p.id] = 0;
         }
     });
 
@@ -128,14 +136,11 @@ function renderJapanMap() {
             // ドラッグ等の干渉を防ぐ
             img.ondragstart = () => false;
 
-            // 進捗状況に応じたCSSフィルター表示を適用
+            // 進捗状況に応じた表示を適用
+            img.style.filter = 'none';
             if (rate < 80) {
-                // 発掘中: 通常カラー（不透明）
-                img.style.filter = 'none';
                 img.style.zIndex = '10';
             } else {
-                // 完成（80%以上）: 通常カラー ＋ 金色の輝きエフェクト
-                img.style.filter = 'drop-shadow(0px 0px 8px #ffb300)';
                 img.style.zIndex = '15';
             }
 
@@ -155,8 +160,6 @@ function renderJapanMap() {
         });
     };
 
-    // すでに画像キャッシュがあるなどの理由でonloadが発火しない場合に備え、
-    // completeがtrueであれば手動でonloadイベントをトリガーします
     if (baseMap.complete) {
         baseMap.onload();
     }
@@ -209,7 +212,6 @@ function openAreaSelect() {
     const grid = document.getElementById('area-grid');
     grid.innerHTML = '';
 
-    // ゲームに登録されている地域の一覧を取得
     const activeRegions = [...new Set(PREFECTURE_DATA.map(p => p.region))];
 
     activeRegions.forEach(regionName => {
@@ -235,11 +237,14 @@ function openEncyclopedia(prefId) {
     if (!pref) return;
 
     const rate = playerStats.excavationRates[pref.id] || 0;
+    const count = playerStats.excavationCounts[pref.id] || 0;
 
     document.getElementById('modal-pref-name').innerText = pref.name;
+    document.getElementById('modal-pref-kana').innerText = pref.kana ? `【${pref.kana}】` : '';
     document.getElementById('modal-capital').innerText = pref.capital;
     document.getElementById('modal-region').innerText = `${pref.region}地層`;
     document.getElementById('modal-completion-rate').innerText = `${rate}%`;
+    document.getElementById('modal-excavation-count').innerText = `${count}回`;
     document.getElementById('modal-specialty').innerText = pref.specialty;
     document.getElementById('modal-landmark').innerText = pref.landmark;
 
@@ -248,53 +253,48 @@ function openEncyclopedia(prefId) {
     document.getElementById('encyclopedia-modal').style.display = 'flex';
 }
 
-// 図鑑キャンバスに高解像度PNG画像を拡大・フィット表示する
+// 図鑑キャンバスに実際のリアルな発掘結果（残った岩・欠けたパーツ）を拡大描画する
 function drawEncyclopediaCanvas(pref, rate) {
     const canvas = document.getElementById('modal-canvas');
     const ctx = canvas.getContext('2d');
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    const img = new Image();
-    img.src = `image/parts/${pref.id}.png`;
-    img.onload = () => {
-        ctx.save();
-        
-        // キャンバスのサイズに合わせて、画像をアスペクト比固定のまま拡大フィット計算
-        const scale = Math.min(canvas.width / img.width, canvas.height / img.height) * 0.8;
-        const dw = img.width * scale;
-        const dh = img.height * scale;
-        const dx = (canvas.width - dw) / 2;
-        const dy = (canvas.height - dh) / 2;
+    const savedImage = playerStats.excavationImages[pref.id];
 
-        // 影（未発掘シルエット）としての描画
-        ctx.shadowColor = 'rgba(0, 0, 0, 0.3)';
-        ctx.shadowBlur = 8;
-        ctx.drawImage(img, dx, dy, dw, dh);
+    if (savedImage && rate > 0) {
+        const img = new Image();
+        img.src = savedImage;
+        img.onload = () => {
+            ctx.save();
+            ctx.shadowColor = 'rgba(0, 0, 0, 0.3)';
+            ctx.shadowBlur = 10;
+            const scale = Math.min(canvas.width / img.width, canvas.height / img.height) * 0.95;
+            const dw = img.width * scale;
+            const dh = img.height * scale;
+            const dx = (canvas.width - dw) / 2;
+            const dy = (canvas.height - dh) / 2;
+            ctx.drawImage(img, dx, dy, dw, dh);
+            ctx.restore();
+        };
+    } else {
+        // 未発掘時のシルエット表示
+        const img = new Image();
+        img.src = `image/parts/${pref.id}.png`;
+        img.onload = () => {
+            ctx.save();
+            const scale = Math.min(canvas.width / img.width, canvas.height / img.height) * 0.85;
+            const dw = img.width * scale;
+            const dh = img.height * scale;
+            const dx = (canvas.width - dw) / 2;
+            const dy = (canvas.height - dh) / 2;
 
-        if (rate > 0) {
-            // 発掘率が100%未満の場合、削り残しの土に見立てて、ランダムにマスク（消去）する
-            if (rate < 100) {
-                ctx.globalCompositeOperation = 'source-atop';
-                ctx.fillStyle = '#5d4037'; // 土の削り残し色
-                
-                const missing = 100 - rate;
-                for(let i = 0; i < missing * 2; i++) {
-                    ctx.beginPath();
-                    const rx = dx + Math.random() * dw;
-                    const ry = dy + Math.random() * dh;
-                    ctx.arc(rx, ry, 6 + Math.random() * 12, 0, Math.PI * 2);
-                    ctx.fill();
-                }
-            }
-        } else {
-            // 0%（未発掘）の場合は、完全にシルエット状態にする
+            ctx.drawImage(img, dx, dy, dw, dh);
             ctx.globalCompositeOperation = 'source-atop';
-            ctx.fillStyle = 'rgba(0, 0, 0, 0.4)';
+            ctx.fillStyle = 'rgba(40, 30, 20, 0.65)';
             ctx.fillRect(dx, dy, dw, dh);
-        }
-
-        ctx.restore();
-    };
+            ctx.restore();
+        };
+    }
 }
 
 function closeEncyclopedia() {
