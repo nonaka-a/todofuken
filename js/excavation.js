@@ -8,6 +8,7 @@ let targetMaskCanvas, targetMaskCtx, fossilLayerCanvas, fossilLayerCtx, damageMa
 let outlineMaskCanvas, outlineMaskCtx;
 let targetMaskData = null;
 let outlineMaskData = null;
+let targetBounds = null;
 let isDrawing = false;
 let fossilReady = false;
 let excavationScore = 0;
@@ -121,7 +122,6 @@ function setupGameCanvases() {
         targetMaskCtx.drawImage(image, drawX, drawY, drawWidth, drawHeight);
         fossilLayerCtx.drawImage(image, drawX, drawY, drawWidth, drawHeight);
         
-        // 周囲採点用の「外周輪郭帯（Outline Zone）」の作成
         outlineMaskCtx.save();
         outlineMaskCtx.drawImage(image, drawX, drawY, drawWidth, drawHeight);
         outlineMaskCtx.globalCompositeOperation = 'source-over';
@@ -134,6 +134,7 @@ function setupGameCanvases() {
 
         targetMaskData = targetMaskCtx.getImageData(0, 0, canvasWidth, canvasHeight).data;
         outlineMaskData = outlineMaskCtx.getImageData(0, 0, canvasWidth, canvasHeight).data;
+        targetBounds = calculateTargetBounds(drawX, drawY, drawWidth, drawHeight);
 
         drawUnderground();
         drawRock();
@@ -142,11 +143,18 @@ function setupGameCanvases() {
     };
 }
 
+function calculateTargetBounds(x, y, w, h) {
+    return {
+        centerX: x + w / 2,
+        centerY: y + h / 2,
+        radius: Math.max(w, h) / 2
+    };
+}
+
 function drawUnderground() {
     const canvasWidth = underCanvas.width;
     const canvasHeight = underCanvas.height;
     
-    // 明るい岩盤色
     const ground = underCtx.createLinearGradient(0, 0, 0, canvasHeight);
     ground.addColorStop(0, '#8d6e63');
     ground.addColorStop(1, '#5d4037');
@@ -155,7 +163,6 @@ function drawUnderground() {
     underCtx.fillStyle = ground;
     underCtx.fillRect(0, 0, canvasWidth, canvasHeight);
 
-    // 化石パーツ本体を描画
     underCtx.save();
     underCtx.shadowColor = 'rgba(0, 0, 0, 0.4)';
     underCtx.shadowBlur = 6;
@@ -219,7 +226,9 @@ function handleStart(event) {
 }
 
 function handleMove(event) {
-    if (isDrawing) scratch(event);
+    if (!isDrawing) return;
+    if (activeTool === 'hammer' || activeTool === 'chisel') return;
+    scratch(event);
 }
 
 function handleEnd() {
@@ -235,13 +244,13 @@ function scratch(event) {
     const hammerLevel = playerStats.toolLevels.hammer || 1;
 
     if (activeTool === 'hammer') {
-        const radius = 25 + hammerLevel * 5;
-        checkAndDamageFossil(point.x, point.y, radius * 0.7);
-        removeRockSnap(point.x, point.y, radius);
+        const radius = 50 + hammerLevel * 10;
+        checkAreaDamageFossil(point.x, point.y, radius * 0.65);
+        removeRockRandomShape(point.x, point.y, radius);
         spawnHammerFragments(point.x, point.y, radius);
     } else if (activeTool === 'chisel') {
-        const radius = 9 + chiselLevel * 2;
-        checkAndDamageFossil(point.x, point.y, radius * 0.5);
+        const radius = 6 + chiselLevel * 1.5;
+        checkAreaDamageFossil(point.x, point.y, radius * 0.8);
         strikeRock(point.x, point.y, chiselLevel, radius);
     } else if (activeTool === 'brush') {
         removeRockIrregular(point.x, point.y, 22 + brushLevel * 4, Math.min(0.5, 0.28 + brushLevel * 0.06));
@@ -252,20 +261,40 @@ function scratch(event) {
     updateScoreDisplay();
 }
 
-function checkAndDamageFossil(x, y, damageRadius) {
-    if (!isTargetPixel(x, y)) return;
+// ツール（ハンマー/タガネ）の破壊半径エリア内にパーツが含まれているかを領域判定し、巻き込んでダメージ
+function checkAreaDamageFossil(centerX, centerY, checkRadius) {
+    if (!targetMaskData) return;
 
-    const pixel = topCtx.getImageData(x, y, 1, 1).data;
-    const isExposed = pixel[3] < 100;
+    const startX = Math.max(0, Math.floor(centerX - checkRadius));
+    const startY = Math.max(0, Math.floor(centerY - checkRadius));
+    const endX = Math.min(topCanvas.width - 1, Math.ceil(centerX + checkRadius));
+    const endY = Math.min(topCanvas.height - 1, Math.ceil(centerY + checkRadius));
+    const step = 4; // 高速サンプリング
 
-    if (isExposed) {
-        damageFossil(x, y, damageRadius);
+    let hasTargetInArea = false;
+    let hitX = centerX;
+    let hitY = centerY;
+
+    for (let y = startY; y <= endY; y += step) {
+        for (let x = startX; x <= endX; x += step) {
+            const dist = Math.hypot(x - centerX, y - centerY);
+            if (dist <= checkRadius && isTargetPixel(x, y)) {
+                hasTargetInArea = true;
+                hitX = x;
+                hitY = y;
+                break;
+            }
+        }
+        if (hasTargetInArea) break;
+    }
+
+    if (hasTargetInArea) {
+        damageFossil(hitX, hitY, checkRadius * 0.5);
     }
 }
 
-// ピクセルのアルファ二値化処理：少しでも半透明になったピクセルを即座に完全透明(0)に強制変更し、グラデーション層を完全撲滅
 function cleanupTopAlpha(x, y, radius) {
-    const margin = radius + 6;
+    const margin = radius + 8;
     const startX = Math.max(0, Math.floor(x - margin));
     const startY = Math.max(0, Math.floor(y - margin));
     const width = Math.min(topCanvas.width - startX, Math.ceil(margin * 2));
@@ -278,10 +307,35 @@ function cleanupTopAlpha(x, y, radius) {
 
     for (let i = 0; i < data.length; i += 4) {
         if (data[i + 3] < 255) {
-            data[i + 3] = 0; // 完全透明化
+            data[i + 3] = 0;
         }
     }
     topCtx.putImageData(imgData, startX, startY);
+}
+
+function removeRockRandomShape(centerX, centerY, baseRadius) {
+    topCtx.save();
+    topCtx.globalCompositeOperation = 'destination-out';
+    topCtx.globalAlpha = 1.0; 
+    topCtx.beginPath();
+    
+    const pointsCount = 6 + Math.floor(Math.random() * 7);
+    const startAngle = Math.random() * Math.PI * 2;
+
+    for (let i = 0; i < pointsCount; i++) {
+        const angle = startAngle + (Math.PI * 2 * i) / pointsCount + (Math.random() - 0.5) * 0.3;
+        const randomFactor = 0.4 + Math.random() * 0.8;
+        const r = baseRadius * randomFactor;
+        const px = centerX + Math.cos(angle) * r;
+        const py = centerY + Math.sin(angle) * r;
+        if (i === 0) topCtx.moveTo(px, py);
+        else topCtx.lineTo(px, py);
+    }
+    topCtx.closePath();
+    topCtx.fill();
+    topCtx.restore();
+
+    cleanupTopAlpha(centerX, centerY, baseRadius * 1.3);
 }
 
 function removeRockSnap(centerX, centerY, baseRadius) {
@@ -302,7 +356,6 @@ function removeRockSnap(centerX, centerY, baseRadius) {
     topCtx.fill();
     topCtx.restore();
 
-    // 削ったエリアの半透明ピクセルをすべて二値化して消去
     cleanupTopAlpha(centerX, centerY, baseRadius);
 }
 
@@ -344,14 +397,14 @@ function strikeRock(x, y, chiselLevel, radius) {
 
 function spawnHammerFragments(x, y, radius) {
     const container = document.getElementById('canvas-container');
-    const count = 4 + Math.floor(Math.random() * 3);
+    const count = 6 + Math.floor(Math.random() * 4);
     for (let i = 0; i < count; i++) {
         const frag = document.createElement('div');
         frag.className = 'hammer-fragment';
         frag.style.position = 'absolute';
         frag.style.backgroundColor = '#6d4c41';
         frag.style.border = '1px solid #3e2723';
-        const size = 5 + Math.random() * 10;
+        const size = 6 + Math.random() * 12;
         frag.style.width = `${size}px`;
         frag.style.height = `${size}px`;
         frag.style.left = `${x}px`;
@@ -363,7 +416,7 @@ function spawnHammerFragments(x, y, radius) {
         const angle = Math.random() * Math.PI * 2;
         const dist = 20 + Math.random() * radius;
         const tx = Math.cos(angle) * dist;
-        const ty = Math.sin(angle) * dist + 25; 
+        const ty = Math.sin(angle) * dist + 30; 
 
         frag.style.transition = 'transform 1s cubic-bezier(0.25, 1, 0.5, 1), opacity 1s ease-in';
         container.appendChild(frag);
@@ -394,8 +447,9 @@ function findNearbyStrikePoint(strikePoint, maxDistance) {
 
 function drawImpactCrack(x, y) {
     topCtx.save();
-    topCtx.strokeStyle = 'rgba(20, 18, 17, 0.78)';
-    topCtx.lineWidth = 1.5;
+    topCtx.globalCompositeOperation = 'destination-out';
+    topCtx.globalAlpha = 1.0;
+    topCtx.lineWidth = 3;
     topCtx.lineCap = 'round';
     topCtx.beginPath();
     topCtx.moveTo(x - 8, y + 5);
@@ -403,6 +457,8 @@ function drawImpactCrack(x, y) {
     topCtx.lineTo(x + 9, y - 6);
     topCtx.stroke();
     topCtx.restore();
+
+    cleanupTopAlpha(x, y, 15);
 }
 
 function drawConnectedCrack(fromPoint, toPoint, chiselLevel) {
@@ -426,44 +482,38 @@ function drawConnectedCrack(fromPoint, toPoint, chiselLevel) {
     points.push(toPoint);
 
     topCtx.save();
+    topCtx.globalCompositeOperation = 'destination-out';
+    topCtx.globalAlpha = 1.0;
+    topCtx.lineWidth = 3 + chiselLevel * 0.5;
     topCtx.lineCap = 'round';
     topCtx.lineJoin = 'round';
-    topCtx.strokeStyle = 'rgba(14, 13, 12, 0.88)';
-    topCtx.lineWidth = 3 + chiselLevel * 0.25;
     topCtx.beginPath();
     topCtx.moveTo(points[0].x, points[0].y);
     points.slice(1).forEach(point => topCtx.lineTo(point.x, point.y));
     topCtx.stroke();
-
-    topCtx.strokeStyle = 'rgba(194, 184, 160, 0.34)';
-    topCtx.lineWidth = 1;
-    topCtx.beginPath();
-    topCtx.moveTo(points[0].x + 1, points[0].y + 1);
-    points.slice(1).forEach(point => topCtx.lineTo(point.x + 1, point.y + 1));
-    topCtx.stroke();
     topCtx.restore();
+
+    cleanupTopAlpha(toPoint.x, toPoint.y, distance + 10);
 }
 
-// 毎フレーム最前面に「ハッキリ見える黄色の点線枠ガイド」を描画
 function startFragmentAnimationLoop() {
     const render = (now) => {
         fragmentCtx.clearRect(0, 0, fragmentCanvas.width, fragmentCanvas.height);
 
         if (fossilReady && targetMaskCanvas) {
             fragmentCtx.save();
-            fragmentCtx.globalAlpha = 0.65; // くっきりと認識できる透過度
+            fragmentCtx.globalAlpha = 0.85; 
             
             const guideTemp = document.createElement('canvas');
             guideTemp.width = fragmentCanvas.width;
             guideTemp.height = fragmentCanvas.height;
             const guideCtx = guideTemp.getContext('2d');
             
-            // 黄色の点線（ダッシュライン）でパーツの枠線をクッキリ描画
             guideCtx.drawImage(targetMaskCanvas, 0, 0);
             guideCtx.globalCompositeOperation = 'source-over';
-            guideCtx.setLineDash([6, 4]);
-            guideCtx.lineWidth = 2;
-            guideCtx.strokeStyle = '#ffee58';
+            guideCtx.setLineDash([10, 8]);
+            guideCtx.lineWidth = 4;
+            guideCtx.strokeStyle = '#ffffff';
             guideCtx.stroke();
             guideCtx.globalCompositeOperation = 'destination-out';
             guideCtx.drawImage(targetMaskCanvas, 0, 0);
@@ -511,41 +561,72 @@ function damageFossil(x, y, radius) {
 }
 
 function calculateExcavationScore() {
-    if (!outlineMaskData || !targetMaskData) return 0;
+    if (!outlineMaskData || !targetMaskData || !targetBounds) return 0;
 
     const soilData = topCtx.getImageData(0, 0, topCanvas.width, topCanvas.height).data;
     const damageData = damageMaskCtx.getImageData(0, 0, damageMaskCanvas.width, damageMaskCanvas.height).data;
     const sampleStep = 4;
+
+    const numSectors = 16;
+    const sectorCleared = new Array(numSectors).fill(false);
     
+    let targetTotal = 0;
+    let targetSurfaceCleared = 0;
+    let damagedCount = 0;
+
     let outlineTotal = 0;
     let outlineCleared = 0;
-    let targetTotal = 0;
-    let damagedCount = 0;
 
     for (let y = 0; y < topCanvas.height; y += sampleStep) {
         for (let x = 0; x < topCanvas.width; x += sampleStep) {
             const offset = (y * topCanvas.width + x) * 4;
-            const isOutline = outlineMaskData[offset + 3] > 40;
             const isTarget = targetMaskData[offset + 3] > 40;
+            const isOutline = outlineMaskData[offset + 3] > 40;
             const isCleared = soilData[offset + 3] < 92;
+
+            if (!isTarget && isCleared) {
+                const dx = x - targetBounds.centerX;
+                const dy = y - targetBounds.centerY;
+                const dist = Math.hypot(dx, dy);
+
+                if (dist > targetBounds.radius + 10 && dist < targetBounds.radius + 180) {
+                    let angle = Math.atan2(dy, dx);
+                    if (angle < 0) angle += Math.PI * 2;
+                    const sectorIndex = Math.floor((angle / (Math.PI * 2)) * numSectors) % numSectors;
+                    sectorCleared[sectorIndex] = true;
+                }
+            }
+
+            if (isTarget) {
+                targetTotal++;
+                if (isCleared) targetSurfaceCleared++;
+                if (damageData[offset + 3] > 30) damagedCount++;
+            }
 
             if (isOutline) {
                 outlineTotal++;
                 if (isCleared) outlineCleared++;
             }
-            if (isTarget) {
-                targetTotal++;
-                if (damageData[offset + 3] > 30) damagedCount++;
-            }
         }
     }
 
-    if (outlineTotal === 0) return 0;
+    let clearedSectorCount = 0;
+    for (let i = 0; i < numSectors; i++) {
+        if (sectorCleared[i]) clearedSectorCount++;
+    }
+    const isolationRatio = clearedSectorCount / numSectors;
 
-    const clearedRatio = outlineCleared / outlineTotal;
-    const damagePenalty = Math.max(0, 1 - (damagedCount / (targetTotal * 0.5)));
+    const surfaceRatio = targetTotal > 0 ? targetSurfaceCleared / targetTotal : 0;
+    const precisionRatio = outlineTotal > 0 ? outlineCleared / outlineTotal : 0;
+
+    const baseScore = isolationRatio * 40;
+    const surfaceScore = surfaceRatio * 30;
+    const bonusScore = precisionRatio * 30;
+    const rawScore = baseScore + surfaceScore + bonusScore;
+
+    const damagePenalty = Math.max(0, 1 - (damagedCount / (targetTotal * 0.4)));
     
-    const finalScore = Math.round(clearedRatio * 100 * damagePenalty);
+    const finalScore = Math.round(rawScore * damagePenalty);
     return Math.max(0, Math.min(100, finalScore));
 }
 
