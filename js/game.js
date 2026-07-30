@@ -26,7 +26,7 @@ function initScale() {
     const windowWidth = window.innerWidth;
     const windowHeight = window.innerHeight;
     
-    const scaleX = windowWidth / 1200;
+    const scaleX = windowWidth / 1000;
     const scaleY = windowHeight / 720;
     const scale = Math.min(scaleX, scaleY);
 

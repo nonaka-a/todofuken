@@ -1,6 +1,6 @@
 let activePrefecture = null;
 let excavationTimer = null;
-let secondsLeft = 60;
+let secondsLeft = 30;
 let activeTool = 'hammer';
 
 let underCanvas, topCanvas, fragmentCanvas, underCtx, topCtx, fragmentCtx;
@@ -9,6 +9,7 @@ let outlineMaskCanvas, outlineMaskCtx;
 let targetMaskData = null;
 let outlineMaskData = null;
 let targetBounds = null;
+let initialRockPixelCount = 0;
 let isDrawing = false;
 let fossilReady = false;
 let excavationScore = 0;
@@ -45,7 +46,7 @@ function initExcavationGame() {
     if (fragmentAnimFrame) cancelAnimationFrame(fragmentAnimFrame);
 
     updateScoreDisplay();
-    secondsLeft = 60;
+    secondsLeft = 30;
     document.getElementById('timer-sec').innerText = secondsLeft;
     document.querySelectorAll('.damage-pop, .dust-particle, .hammer-fragment').forEach(element => element.remove());
     setTool('hammer');
@@ -138,9 +139,22 @@ function setupGameCanvases() {
 
         drawUnderground();
         drawRock();
+        countInitialRockPixels();
         fossilReady = true;
         startExcavationTimer();
     };
+}
+
+function countInitialRockPixels() {
+    const soilData = topCtx.getImageData(0, 0, topCanvas.width, topCanvas.height).data;
+    let count = 0;
+    const sampleStep = 4;
+    for (let i = 3; i < soilData.length; i += 4 * sampleStep) {
+        if (soilData[i] > 92) {
+            count++;
+        }
+    }
+    initialRockPixelCount = Math.max(1, count);
 }
 
 function calculateTargetBounds(x, y, w, h) {
@@ -177,31 +191,59 @@ function drawRock() {
     const canvasHeight = topCanvas.height;
 
     topCtx.clearRect(0, 0, canvasWidth, canvasHeight);
-    const rockGradient = topCtx.createLinearGradient(0, 0, canvasWidth, canvasHeight);
-    rockGradient.addColorStop(0, '#544e45');
-    rockGradient.addColorStop(0.5, '#3e3933');
-    rockGradient.addColorStop(1, '#2b2723');
-    topCtx.fillStyle = rockGradient;
-    topCtx.fillRect(0, 0, canvasWidth, canvasHeight);
 
-    for (let index = 0; index < 1250; index++) {
-        const x = Math.random() * canvasWidth;
-        const y = Math.random() * canvasHeight;
-        const size = 1 + Math.random() * 2;
-        topCtx.fillStyle = Math.random() > 0.5 ? 'rgba(20, 19, 18, 0.35)' : 'rgba(195, 185, 158, 0.2)';
+    const centerX = targetBounds ? targetBounds.centerX : canvasWidth / 2;
+    const centerY = targetBounds ? targetBounds.centerY : canvasHeight / 2;
+    const baseRadius = targetBounds ? targetBounds.radius + 50 : 180;
+
+    topCtx.save();
+    topCtx.beginPath();
+    const pointsCount = 36;
+    for (let i = 0; i < pointsCount; i++) {
+        const angle = (Math.PI * 2 * i) / pointsCount;
+        const radiusNoise = (Math.random() - 0.5) * 35;
+        const rx = (baseRadius * 1.25 + radiusNoise) * Math.cos(angle);
+        const ry = (baseRadius * 0.95 + radiusNoise) * Math.sin(angle);
+        const px = centerX + rx;
+        const py = centerY + ry;
+
+        if (i === 0) topCtx.moveTo(px, py);
+        else topCtx.lineTo(px, py);
+    }
+    topCtx.closePath();
+
+    const rockGradient = topCtx.createRadialGradient(
+        centerX - 40, centerY - 40, 20,
+        centerX, centerY, baseRadius * 1.4
+    );
+    rockGradient.addColorStop(0, '#544e45');
+    rockGradient.addColorStop(0.6, '#3e3933');
+    rockGradient.addColorStop(1, '#23201d');
+    
+    topCtx.fillStyle = rockGradient;
+    topCtx.fill();
+    topCtx.clip();
+
+    for (let index = 0; index < 1500; index++) {
+        const x = centerX + (Math.random() - 0.5) * baseRadius * 2.8;
+        const y = centerY + (Math.random() - 0.5) * baseRadius * 2.4;
+        const size = 1 + Math.random() * 2.5;
+        topCtx.fillStyle = Math.random() > 0.5 ? 'rgba(15, 14, 13, 0.4)' : 'rgba(210, 198, 170, 0.22)';
         topCtx.fillRect(x, y, size, size);
     }
 
     topCtx.lineWidth = 1;
-    for (let index = 0; index < 80; index++) {
-        const x = Math.random() * canvasWidth;
-        const y = Math.random() * canvasHeight;
-        topCtx.strokeStyle = 'rgba(25, 24, 22, 0.4)';
+    for (let index = 0; index < 90; index++) {
+        const x = centerX + (Math.random() - 0.5) * baseRadius * 2.5;
+        const y = centerY + (Math.random() - 0.5) * baseRadius * 2.2;
+        topCtx.strokeStyle = 'rgba(20, 19, 17, 0.45)';
         topCtx.beginPath();
         topCtx.moveTo(x, y);
-        topCtx.lineTo(x + (Math.random() - 0.5) * 45, y + (Math.random() - 0.5) * 24);
+        topCtx.lineTo(x + (Math.random() - 0.5) * 40, y + (Math.random() - 0.5) * 22);
         topCtx.stroke();
     }
+
+    topCtx.restore();
 }
 
 function startExcavationTimer() {
@@ -501,23 +543,28 @@ function startFragmentAnimationLoop() {
 
         if (fossilReady && targetMaskCanvas) {
             fragmentCtx.save();
-            fragmentCtx.globalAlpha = 0.85; 
-            
+            fragmentCtx.globalAlpha = 1.0; 
+
             const guideTemp = document.createElement('canvas');
             guideTemp.width = fragmentCanvas.width;
             guideTemp.height = fragmentCanvas.height;
             const guideCtx = guideTemp.getContext('2d');
             
             guideCtx.drawImage(targetMaskCanvas, 0, 0);
-            guideCtx.globalCompositeOperation = 'source-over';
-            guideCtx.setLineDash([10, 8]);
-            guideCtx.lineWidth = 4;
-            guideCtx.strokeStyle = '#ffffff';
-            guideCtx.stroke();
-            guideCtx.globalCompositeOperation = 'destination-out';
-            guideCtx.drawImage(targetMaskCanvas, 0, 0);
+            guideCtx.globalCompositeOperation = 'source-in';
+            guideCtx.fillStyle = '#ffffff';
+            guideCtx.fillRect(0, 0, guideTemp.width, guideTemp.height);
 
-            fragmentCtx.drawImage(guideTemp, 0, 0);
+            fragmentCtx.save();
+            fragmentCtx.shadowColor = '#000000';
+            fragmentCtx.shadowBlur = 4;
+            fragmentCtx.setLineDash([12, 8]);
+            fragmentCtx.lineWidth = 6;
+            fragmentCtx.strokeStyle = '#ffffff';
+            
+            fragmentCtx.drawImage(outlineMaskCanvas, 0, 0);
+            fragmentCtx.restore();
+
             fragmentCtx.restore();
         }
 
@@ -566,9 +613,7 @@ function calculateExcavationScore() {
     const damageData = damageMaskCtx.getImageData(0, 0, damageMaskCanvas.width, damageMaskCanvas.height).data;
     const sampleStep = 4;
 
-    const numSectors = 16;
-    const sectorCleared = new Array(numSectors).fill(false);
-    
+    let currentRockPixelCount = 0;
     let targetTotal = 0;
     let targetSurfaceCleared = 0;
     let damagedCount = 0;
@@ -583,17 +628,8 @@ function calculateExcavationScore() {
             const isOutline = outlineMaskData[offset + 3] > 40;
             const isCleared = soilData[offset + 3] < 92;
 
-            if (!isTarget && isCleared) {
-                const dx = x - targetBounds.centerX;
-                const dy = y - targetBounds.centerY;
-                const dist = Math.hypot(dx, dy);
-
-                if (dist > targetBounds.radius + 10 && dist < targetBounds.radius + 180) {
-                    let angle = Math.atan2(dy, dx);
-                    if (angle < 0) angle += Math.PI * 2;
-                    const sectorIndex = Math.floor((angle / (Math.PI * 2)) * numSectors) % numSectors;
-                    sectorCleared[sectorIndex] = true;
-                }
+            if (!isCleared) {
+                currentRockPixelCount++;
             }
 
             if (isTarget) {
@@ -609,19 +645,15 @@ function calculateExcavationScore() {
         }
     }
 
-    let clearedSectorCount = 0;
-    for (let i = 0; i < numSectors; i++) {
-        if (sectorCleared[i]) clearedSectorCount++;
-    }
-    const isolationRatio = clearedSectorCount / numSectors;
+    const rockClearedRatio = Math.max(0, 1 - (currentRockPixelCount / initialRockPixelCount));
+    const rockRemovalScore = rockClearedRatio * 40;
 
     const surfaceRatio = targetTotal > 0 ? targetSurfaceCleared / targetTotal : 0;
     const precisionRatio = outlineTotal > 0 ? outlineCleared / outlineTotal : 0;
 
-    const baseScore = isolationRatio * 40;
     const surfaceScore = surfaceRatio * 30;
     const bonusScore = precisionRatio * 30;
-    const rawScore = baseScore + surfaceScore + bonusScore;
+    const rawScore = rockRemovalScore + surfaceScore + bonusScore;
 
     const damagePenalty = Math.max(0, 1 - (damagedCount / (targetTotal * 0.4)));
     
@@ -677,10 +709,7 @@ function captureExcavationResult() {
     snapshotCanvas.height = underCanvas.height;
     const sCtx = snapshotCanvas.getContext('2d');
 
-    // 欠けた化石層を含んだ画像レイヤー
     sCtx.drawImage(fossilLayerCanvas, 0, 0);
-
-    // 取りきれていない残り岩レイヤーを合成
     sCtx.drawImage(topCanvas, 0, 0);
 
     return snapshotCanvas.toDataURL('image/png');
@@ -689,6 +718,11 @@ function captureExcavationResult() {
 function finishExcavation() {
     clearInterval(excavationTimer);
     if (fragmentAnimFrame) cancelAnimationFrame(fragmentAnimFrame);
+
+    // ガイド点線キャンバスをクリアして化石と岩をはっきり表示
+    if (fragmentCtx) {
+        fragmentCtx.clearRect(0, 0, fragmentCanvas.width, fragmentCanvas.height);
+    }
 
     excavationScore = calculateExcavationScore();
     updateScoreDisplay();
@@ -701,15 +735,14 @@ function finishExcavation() {
         playerStats.excavationRates[activePrefecture.id] = score;
     }
 
-    // 発掘回数の加算
+    const resultImgData = captureExcavationResult();
     playerStats.excavationCounts[activePrefecture.id] = (playerStats.excavationCounts[activePrefecture.id] || 0) + 1;
-
-    // リアルな発掘結果（欠けたパーツ・残り岩）を記録保存
-    playerStats.excavationImages[activePrefecture.id] = captureExcavationResult();
+    playerStats.excavationImages[activePrefecture.id] = resultImgData;
 
     playerStats.gold += reward;
     saveGame();
 
+    document.getElementById('result-fossil-img').src = resultImgData;
     document.getElementById('result-pref-display').innerText = `${activePrefecture.name}の化石`;
     document.getElementById('result-score').innerText = score;
     document.getElementById('result-reward-gold').innerText = reward;

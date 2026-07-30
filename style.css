@@ -32,7 +32,7 @@ html, body {
 }
 
 #game-stage {
-    width: 1200px;
+    width: 1000px;
     height: 720px;
     position: relative;
     background-color: var(--bg-light);
@@ -86,7 +86,7 @@ header h1 {
     position: absolute;
     top: 64px;
     left: 0;
-    width: 1200px;
+    width: 1000px;
     height: 656px;
     display: none;
 }
@@ -153,14 +153,14 @@ header h1 {
 
 .action-buttons {
     position: absolute;
-    left: 40px;
-    top: 30px;
+    left: 30px;
+    top: 10px;
     display: flex;
     flex-direction: column;
     align-items: flex-start;
-    gap: 20px;
+    gap: 15px;
     z-index: 5;
-    padding: 12px;
+    padding: 10px;
     border-left: 2px solid rgba(239, 195, 102, 0.68);
     background: linear-gradient(90deg, rgba(45, 23, 10, 0.48), transparent);
 }
@@ -282,13 +282,19 @@ header h1 {
     position: absolute;
     top: 0;
     left: 0;
-    width: 1200px;
+    width: 1000px;
     height: 720px;
     background: rgba(20, 10, 4, 0.72);
     backdrop-filter: blur(4px);
     z-index: 50;
     justify-content: center;
     align-items: center;
+}
+
+/* リザルト画面表示時は発掘キャンバスが見えるように背景を透明化 */
+#result-modal {
+    background: rgba(0, 0, 0, 0.15);
+    backdrop-filter: none;
 }
 
 .modal-window {
@@ -537,14 +543,29 @@ header h1 {
     margin-top: 10px;
 }
 
-.card-window {
-    width: 880px;
-    padding: 25px 35px;
+.result-window {
+    width: 620px;
+    text-align: center;
+    padding: 20px 30px;
 }
 
-.result-window {
-    width: 540px;
-    text-align: center;
+.result-visual {
+    background: radial-gradient(circle, #f7eddb, #d8bd8f);
+    border: 2px solid #8c5b27;
+    border-radius: 8px;
+    margin: 10px 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 8px;
+    height: 220px;
+}
+
+#result-fossil-img {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+    filter: drop-shadow(0px 4px 6px rgba(0,0,0,0.3));
 }
 
 .encyclopedia-visual {
