@@ -16,7 +16,6 @@ window.addEventListener('DOMContentLoaded', () => {
     initScale();
     window.addEventListener('resize', initScale);
     
-    // ロード中はボタンを操作不能にしておく
     document.getElementById('btn-shop').disabled = true;
     document.getElementById('btn-excavate').disabled = true;
 
@@ -24,16 +23,14 @@ window.addEventListener('DOMContentLoaded', () => {
     initGame();
 });
 
-// BGM再生の初期化とループ再生ロジック
 function initBGM() {
     bgmAudio = new Audio('sounds/BGM.mp3');
     bgmAudio.loop = true;
-    bgmAudio.volume = 0.35; // 適度な音量に設定
+    bgmAudio.volume = 0.35;
 
     const startBGM = () => {
         if (bgmAudio) {
             bgmAudio.play().then(() => {
-                // 自動再生が成功したらユーザー操作リスナーを削除
                 window.removeEventListener('click', startBGM);
                 window.removeEventListener('keydown', startBGM);
                 window.removeEventListener('touchstart', startBGM);
@@ -43,7 +40,6 @@ function initBGM() {
         }
     };
 
-    // 初回ユーザーインタラクション時にBGM再生を開始
     window.addEventListener('click', startBGM);
     window.addEventListener('keydown', startBGM);
     window.addEventListener('touchstart', startBGM);
@@ -86,16 +82,29 @@ async function initGame() {
     renderJapanMap();
     updateUI();
 
-    // ロード完了で操作可能化
     document.getElementById('btn-shop').disabled = false;
     document.getElementById('btn-excavate').disabled = false;
 }
 
 function saveGame() {
-    localStorage.setItem('japan_museum_save', JSON.stringify(playerStats));
+    try {
+        localStorage.setItem('japan_museum_save', JSON.stringify(playerStats));
+    } catch (e) {
+        console.warn("Storage quota exceeded. Clearing old image caches...", e);
+        if (playerStats.excavationImages) {
+            const keys = Object.keys(playerStats.excavationImages);
+            if (keys.length > 0) {
+                delete playerStats.excavationImages[keys[0]];
+                try {
+                    localStorage.setItem('japan_museum_save', JSON.stringify(playerStats));
+                } catch (e2) {
+                    console.error("Save failed after image cleanup.", e2);
+                }
+            }
+        }
+    }
 }
 
-// セーブデータの初期化機能
 function resetSaveData() {
     if (confirm("本当にセーブデータを消去して最初からやり直しますか？\n（この操作は取り消せません）")) {
         localStorage.removeItem('japan_museum_save');
@@ -103,10 +112,9 @@ function resetSaveData() {
     }
 }
 
-// 読み込んだ JS 変数データに基づいて、画像を絶対座標で並べる
 function renderJapanMap() {
     const container = document.getElementById('japan-map-container');
-    container.innerHTML = ''; // 以前の描画要素をリセット
+    container.innerHTML = '';
 
     const positions = (typeof PREFECTURE_POSITIONS !== 'undefined') ? PREFECTURE_POSITIONS : {};
 
@@ -119,7 +127,7 @@ function renderJapanMap() {
     baseMap.style.height = '100%';
     baseMap.style.objectFit = 'contain'; 
     baseMap.style.pointerEvents = 'none';
-    baseMap.style.opacity = '0.15'; // ガイドとして薄く表示
+    baseMap.style.opacity = '0.15';
     baseMap.style.zIndex = '1';
     container.appendChild(baseMap);
 
@@ -134,7 +142,6 @@ function renderJapanMap() {
         const offsetY = (containerHeight - drawHeight) / 2;
 
         PREFECTURE_DATA.forEach(p => {
-            // パズル設置ミニゲーム進行中のパーツは展示室地図への描画をスキップ
             if (typeof currentPlacementPrefId !== 'undefined' && p.id === currentPlacementPrefId) return;
 
             const pos = positions[p.id];
@@ -208,6 +215,7 @@ function updateUI() {
 function openShop() {
     document.getElementById('shop-modal').style.display = 'flex';
 }
+
 function closeShop() {
     document.getElementById('shop-modal').style.display = 'none';
 }
@@ -228,6 +236,21 @@ function upgradeTool(tool) {
     }
 }
 
+function toggleAreaHint(event, regionName) {
+    event.stopPropagation();
+    
+    const allPopouts = document.querySelectorAll('.area-hint-popout');
+    const targetPopout = document.getElementById(`hint-popout-${regionName}`);
+
+    const isVisible = targetPopout ? targetPopout.style.display === 'block' : false;
+
+    allPopouts.forEach(pop => pop.style.display = 'none');
+
+    if (targetPopout && !isVisible) {
+        targetPopout.style.display = 'block';
+    }
+}
+
 function openAreaSelect() {
     const grid = document.getElementById('area-grid');
     grid.innerHTML = '';
@@ -235,12 +258,28 @@ function openAreaSelect() {
     const activeRegions = [...new Set(PREFECTURE_DATA.map(p => p.region))];
 
     activeRegions.forEach(regionName => {
+        const regionPrefs = PREFECTURE_DATA.filter(p => p.region === regionName);
+        const totalCount = regionPrefs.length;
+        const foundCount = regionPrefs.filter(p => (playerStats.excavationRates[p.id] || 0) > 0).length;
+
+        const details = (typeof REGION_DETAILS !== 'undefined' && REGION_DETAILS[regionName]) 
+            ? REGION_DETAILS[regionName] 
+            : { feature: '---', hint: '---' };
+
         const card = document.createElement('div');
         card.className = 'area-card';
         card.onclick = () => startAreaExcavation(regionName);
         card.innerHTML = `
-            <h4>${regionName}地層</h4>
-            <p style="font-size: 0.85rem; color: #666;">はっくつエリア</p>
+            <h4>${regionName}地層 <span style="font-size: 0.95rem; font-weight: normal; color: #6d3f1f;">(${foundCount}/${totalCount})</span></h4>
+            <div class="area-info-item">
+                <span class="area-label-badge">地質の特徴</span><br>${details.feature}
+            </div>
+            <div class="area-card-footer">
+                <div class="area-hint-popout" id="hint-popout-${regionName}">
+                    ${details.hint}
+                </div>
+                <button type="button" class="btn-area-hint" onclick="toggleAreaHint(event, '${regionName}')">発掘のヒント</button>
+            </div>
         `;
         grid.appendChild(card);
     });

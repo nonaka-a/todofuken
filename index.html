@@ -19,7 +19,7 @@
                     所持金: <span id="player-gold">500</span> G
                 </div>
                 <div class="stat-badge">
-                    ずかんの完成度: <span id="total-completion">0</span>%
+                    日本列島完成度: <span id="total-completion">0</span>%
                 </div>
                 <!-- セーブデータ初期化ボタンを追加 -->
                 <button class="btn btn-secondary" onclick="resetSaveData()" style="padding: 6px 12px; font-size: 0.85rem; background-color: #d32f2f;">データを消す</button>
@@ -30,8 +30,8 @@
         <div id="museum-screen" class="screen active">
             <!-- 独立したアクションボタン -->
             <div class="action-buttons">
-                <button class="btn btn-shop" id="btn-shop" onclick="openShop()">どうぐを買う</button>
-                <button class="btn btn-accent btn-large" id="btn-excavate" onclick="openAreaSelect()">はっくつに行く</button>
+                <button class="btn btn-shop" id="btn-shop" onclick="openShop()">道具を買う</button>
+                <button class="btn btn-accent btn-large" id="btn-excavate" onclick="openAreaSelect()">発掘へ行く</button>
             </div>
 
             <!-- 中央配置の展示エリア（展示台と地図） -->
@@ -88,7 +88,7 @@
         <div id="area-select-modal" class="modal-overlay">
             <div class="modal-window">
                 <div class="modal-header">
-                    <h2>はっくつする場所をえらぼう</h2>
+                    <h2>発掘する場所を選ぶ</h2>
                     <button class="btn-close" onclick="closeAreaSelect()">とじる</button>
                 </div>
                 <div class="area-grid" id="area-grid">
@@ -100,7 +100,10 @@
         <!-- 4. 発掘ミニゲーム画面 -->
         <div id="excavation-screen" class="screen">
             <div class="game-header">
-                <button class="btn" onclick="confirmAbort()">もどる</button>
+                <div style="display: flex; gap: 8px;">
+                    <button class="btn" onclick="confirmAbort()">もどる</button>
+                    <button class="btn btn-accent" onclick="finishExcavationEarly()">完成</button>
+                </div>
                 <div class="target-name">さがす化石: <span id="target-prefecture-name">---</span></div>
                 <div class="game-timer">のこり時間: <span id="timer-sec">30</span> 秒</div>
                 <div class="game-status">完成度: <span id="current-integrity">0</span>%</div>
@@ -175,6 +178,17 @@
             <img id="placement-drag-part" src="" alt="設置パーツ" style="position: absolute; cursor: grab; z-index: 101; display: none; transition: filter 0.2s;">
         </div>
 
+        <!-- 8. 確認ダイアログモーダル -->
+        <div id="confirm-modal" class="modal-overlay">
+            <div class="modal-window confirm-window" style="width: 420px; text-align: center; padding: 25px;">
+                <p id="confirm-message" style="font-size: 1.1rem; color: var(--primary-dark); margin-bottom: 20px; line-height: 1.5; white-space: pre-wrap; font-weight: bold;"></p>
+                <div style="display: flex; justify-content: center; gap: 15px;">
+                    <button id="btn-confirm-ok" class="btn btn-accent" style="padding: 8px 24px;">はい</button>
+                    <button id="btn-confirm-cancel" class="btn" style="padding: 8px 24px;">いいえ</button>
+                </div>
+            </div>
+        </div>
+        
         <!-- 暗転フェード用オーバーレイ -->
         <div id="fade-overlay" style="position: absolute; top: 0; left: 0; width: 1000px; height: 720px; background-color: #000; opacity: 0; pointer-events: none; z-index: 200; transition: opacity 0.4s ease;"></div>
 

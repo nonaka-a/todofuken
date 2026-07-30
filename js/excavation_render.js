@@ -248,13 +248,35 @@ function showDamageEffect(x, y) {
 }
 
 function captureExcavationResult() {
-    const snapshotCanvas = document.createElement('canvas');
-    snapshotCanvas.width = underCanvas.width;
-    snapshotCanvas.height = underCanvas.height;
-    const sCtx = snapshotCanvas.getContext('2d');
+    const w = underCanvas.width;
+    const h = underCanvas.height;
 
-    sCtx.drawImage(fossilLayerCanvas, 0, 0);
-    sCtx.drawImage(topCanvas, 0, 0);
+    // 1. パーツ形状＋残り岩だけを透過合成する一時キャンバス
+    const tempCanvas = document.createElement('canvas');
+    tempCanvas.width = w;
+    tempCanvas.height = h;
+    const tCtx = tempCanvas.getContext('2d');
+
+    // 下層：欠けた化石層
+    tCtx.drawImage(fossilLayerCanvas, 0, 0);
+
+    // 上層：化石の上に残っている岩のみを重なる範囲で描画（四角い背景は除く）
+    const rockTemp = document.createElement('canvas');
+    rockTemp.width = w;
+    rockTemp.height = h;
+    const rCtx = rockTemp.getContext('2d');
+    rCtx.drawImage(topCanvas, 0, 0);
+    rCtx.globalCompositeOperation = 'destination-in';
+    rCtx.drawImage(targetMaskCanvas, 0, 0); // パーツ領域のみに限定
+
+    tCtx.drawImage(rockTemp, 0, 0);
+
+    // 2. 300x180 の軽量キャンバスに透明のままリサイズ描画
+    const snapshotCanvas = document.createElement('canvas');
+    snapshotCanvas.width = 300;
+    snapshotCanvas.height = 180;
+    const sCtx = snapshotCanvas.getContext('2d');
+    sCtx.drawImage(tempCanvas, 0, 0, 300, 180);
 
     return snapshotCanvas.toDataURL('image/png');
 }

@@ -1,6 +1,6 @@
 let activePrefecture = null;
 let excavationTimer = null;
-let secondsLeft = 30;
+let secondsLeft = 60;
 let activeTool = 'hammer';
 
 let underCanvas, topCanvas, fragmentCanvas, underCtx, topCtx, fragmentCtx;
@@ -48,7 +48,7 @@ function initExcavationGame() {
     if (fragmentAnimFrame) cancelAnimationFrame(fragmentAnimFrame);
 
     updateScoreDisplay();
-    secondsLeft = 30;
+    secondsLeft = 60;
     document.getElementById('timer-sec').innerText = secondsLeft;
     document.querySelectorAll('.damage-pop, .dust-particle, .hammer-fragment').forEach(element => element.remove());
     setTool('hammer');
@@ -62,14 +62,13 @@ function initExcavationGame() {
 
     setupGameCanvases();
 
-   topCanvas.onmousedown = handleStart;
+    topCanvas.onmousedown = handleStart;
     topCanvas.onmousemove = handleMove;
     topCanvas.onmouseup = handleEnd;
     topCanvas.onmouseleave = handleEnd;
     topCanvas.ontouchstart = event => { handleTouch(event, 'mousedown'); };
     topCanvas.ontouchmove = event => { handleTouch(event, 'mousemove'); };
     topCanvas.ontouchend = event => { event.preventDefault(); handleEnd(); };
-    topCanvas.ontouchcancel = event => { event.preventDefault(); handleEnd(); };
     topCanvas.ontouchcancel = event => { event.preventDefault(); handleEnd(); };
 
     if (excavationTimer) clearInterval(excavationTimer);
@@ -383,15 +382,37 @@ function isTargetPixel(x, y) {
 }
 
 function damageFossil(x, y, radius) {
+    const pointsCount = 6 + Math.floor(Math.random() * 4);
+    const startAngle = Math.random() * Math.PI * 2;
+    const points = [];
+
+    for (let i = 0; i < pointsCount; i++) {
+        const angle = startAngle + (Math.PI * 2 * i) / pointsCount + (Math.random() - 0.5) * 0.4;
+        const randomFactor = 0.5 + Math.random() * 0.7;
+        const r = radius * randomFactor;
+        points.push({
+            x: x + Math.cos(angle) * r,
+            y: y + Math.sin(angle) * r
+        });
+    }
+
     fossilLayerCtx.save();
     fossilLayerCtx.globalCompositeOperation = 'destination-out';
     fossilLayerCtx.beginPath();
-    fossilLayerCtx.arc(x, y, radius, 0, Math.PI * 2);
+    points.forEach((p, i) => {
+        if (i === 0) fossilLayerCtx.moveTo(p.x, p.y);
+        else fossilLayerCtx.lineTo(p.x, p.y);
+    });
+    fossilLayerCtx.closePath();
     fossilLayerCtx.fill();
     fossilLayerCtx.restore();
 
     damageMaskCtx.beginPath();
-    damageMaskCtx.arc(x, y, radius, 0, Math.PI * 2);
+    points.forEach((p, i) => {
+        if (i === 0) damageMaskCtx.moveTo(p.x, p.y);
+        else damageMaskCtx.lineTo(p.x, p.y);
+    });
+    damageMaskCtx.closePath();
     damageMaskCtx.fillStyle = '#fff';
     damageMaskCtx.fill();
 
@@ -458,12 +479,47 @@ function updateScoreDisplay() {
     document.getElementById('current-integrity').innerText = Math.round(excavationScore);
 }
 
+function showCustomConfirm(message, onOk) {
+    const modal = document.getElementById('confirm-modal');
+    const msgElem = document.getElementById('confirm-message');
+    const okBtn = document.getElementById('btn-confirm-ok');
+    const cancelBtn = document.getElementById('btn-confirm-cancel');
+
+    msgElem.innerText = message;
+    modal.style.display = 'flex';
+
+    const handleOk = () => {
+        cleanup();
+        modal.style.display = 'none';
+        onOk();
+    };
+
+    const handleCancel = () => {
+        cleanup();
+        modal.style.display = 'none';
+    };
+
+    const cleanup = () => {
+        okBtn.removeEventListener('click', handleOk);
+        cancelBtn.removeEventListener('click', handleCancel);
+    };
+
+    okBtn.addEventListener('click', handleOk);
+    cancelBtn.addEventListener('click', handleCancel);
+}
+
 function confirmAbort() {
-    if (confirm("はっくつをやめてもどりますか？")) {
+    showCustomConfirm("発掘をやめて展示室にもどりますか？\n（途中の作業は保存されません）", () => {
         clearInterval(excavationTimer);
         if (fragmentAnimFrame) cancelAnimationFrame(fragmentAnimFrame);
         returnToMuseum();
-    }
+    });
+}
+
+function finishExcavationEarly() {
+    showCustomConfirm("発掘を終了して結果画面へ進みますか？", () => {
+        finishExcavation();
+    });
 }
 
 function finishExcavation() {
@@ -482,13 +538,14 @@ function finishExcavation() {
     const previousScore = playerStats.excavationRates[activePrefecture.id] || 0;
     const isFirstTime = previousScore === 0;
 
+    const resultImgData = captureExcavationResult();
+
     if (score > previousScore) {
         playerStats.excavationRates[activePrefecture.id] = score;
+        playerStats.excavationImages[activePrefecture.id] = resultImgData;
     }
 
-    const resultImgData = captureExcavationResult();
     playerStats.excavationCounts[activePrefecture.id] = (playerStats.excavationCounts[activePrefecture.id] || 0) + 1;
-    playerStats.excavationImages[activePrefecture.id] = resultImgData;
 
     playerStats.gold += reward;
     saveGame();
@@ -510,7 +567,6 @@ function finishExcavation() {
 function closeResult() {
     document.getElementById('result-modal').style.display = 'none';
 
-    // 初発掘（獲得回数が1回目）かつスコア40%以上なら、パズルミニゲームを優先起動
     const count = activePrefecture ? (playerStats.excavationCounts[activePrefecture.id] || 0) : 0;
     const isFirstPlacement = activePrefecture && count === 1 && excavationScore >= 40;
 

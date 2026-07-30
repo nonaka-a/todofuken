@@ -367,9 +367,15 @@ header h1 {
     color: #795548;
 }
 
+#area-select-modal .modal-window {
+    width: 880px;
+    max-height: 640px;
+    overflow-y: auto;
+}
+
 .area-grid {
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(2, 1fr);
     gap: 15px;
 }
 
@@ -377,11 +383,101 @@ header h1 {
     background: linear-gradient(135deg, #fffdf8, #ebdcc3);
     border: 1px solid #b98a4b;
     border-radius: 8px;
-    padding: 20px 15px;
-    text-align: center;
+    padding: 15px;
+    text-align: left;
     cursor: pointer;
     box-shadow: inset 0 1px rgba(255, 255, 255, 0.92), 0 4px 9px rgba(62, 34, 15, 0.14);
     transition: transform 0.2s, border-color 0.2s, box-shadow 0.2s;
+}
+
+.area-card h4 {
+    color: var(--primary-dark);
+    font-size: 1.2rem;
+    margin-bottom: 10px;
+    text-align: center;
+    border-bottom: 2px dashed #c59b60;
+    padding-bottom: 5px;
+}
+
+.area-info-item {
+    font-size: 0.85rem;
+    color: #4a2d18;
+    line-height: 1.4;
+    margin-bottom: 8px;
+}
+
+.area-info-item:last-child {
+    margin-bottom: 0;
+}
+
+.area-label-badge {
+    display: inline-block;
+    background-color: #8a5a2b;
+    color: #ffffff;
+    font-size: 0.75rem;
+    font-weight: bold;
+    padding: 2px 8px;
+    border-radius: 4px;
+    margin-right: 5px;
+    margin-bottom: 3px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+}
+
+.btn-area-hint {
+    background: linear-gradient(180deg, #e67e22, #d35400);
+    color: #ffffff;
+    border: 1px solid #f39c12;
+    font-size: 0.75rem;
+    font-weight: bold;
+    padding: 3px 10px;
+    border-radius: 12px;
+    cursor: pointer;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    transition: transform 0.15s, background-color 0.15s;
+}
+
+.btn-area-hint:hover {
+    filter: brightness(1.1);
+    transform: scale(1.05);
+}
+
+.area-card-footer {
+    margin-top: 10px;
+    position: relative;
+}
+
+.area-hint-popout {
+    display: none;
+    position: absolute;
+    bottom: 100%;
+    left: 0;
+    width: 100%;
+    margin-bottom: 8px;
+    padding: 10px 12px;
+    background: #fffef2;
+    border: 2px solid #d35400;
+    border-radius: 8px;
+    box-shadow: 0 6px 16px rgba(0,0,0,0.25);
+    z-index: 20;
+    font-size: 0.85rem;
+    color: #372116;
+    line-height: 1.4;
+    animation: popUpAnim 0.2s ease-out forwards;
+}
+
+.area-hint-popout::after {
+    content: '';
+    position: absolute;
+    top: 100%;
+    left: 20px;
+    border-width: 6px;
+    border-style: solid;
+    border-color: #d35400 transparent transparent transparent;
+}
+
+@keyframes popUpAnim {
+    0% { opacity: 0; transform: translateY(6px); }
+    100% { opacity: 1; transform: translateY(0); }
 }
 
 .area-card:hover {
@@ -556,7 +652,7 @@ header h1 {
 }
 
 .result-visual {
-    background: radial-gradient(circle, #f7eddb, #d8bd8f);
+    background: #e1cbb3;
     border: 2px solid #8c5b27;
     border-radius: 8px;
     margin: 10px 0;
@@ -565,6 +661,7 @@ header h1 {
     align-items: center;
     padding: 8px;
     height: 220px;
+    box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.2);
 }
 
 #result-fossil-img {
