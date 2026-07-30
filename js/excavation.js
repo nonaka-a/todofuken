@@ -62,13 +62,15 @@ function initExcavationGame() {
 
     setupGameCanvases();
 
-    topCanvas.onmousedown = handleStart;
+   topCanvas.onmousedown = handleStart;
     topCanvas.onmousemove = handleMove;
     topCanvas.onmouseup = handleEnd;
     topCanvas.onmouseleave = handleEnd;
-    topCanvas.ontouchstart = event => handleTouch(event, 'mousedown');
-    topCanvas.ontouchmove = event => handleTouch(event, 'mousemove');
-    topCanvas.ontouchend = handleEnd;
+    topCanvas.ontouchstart = event => { handleTouch(event, 'mousedown'); };
+    topCanvas.ontouchmove = event => { handleTouch(event, 'mousemove'); };
+    topCanvas.ontouchend = event => { event.preventDefault(); handleEnd(); };
+    topCanvas.ontouchcancel = event => { event.preventDefault(); handleEnd(); };
+    topCanvas.ontouchcancel = event => { event.preventDefault(); handleEnd(); };
 
     if (excavationTimer) clearInterval(excavationTimer);
     startFragmentAnimationLoop();
@@ -76,8 +78,11 @@ function initExcavationGame() {
 
 function handleTouch(event, type) {
     event.preventDefault();
-    const touch = event.touches[0];
-    if (!touch) return;
+    const touch = event.touches[0] || (event.changedTouches ? event.changedTouches[0] : null);
+    if (!touch) {
+        handleEnd();
+        return;
+    }
     topCanvas.dispatchEvent(new MouseEvent(type, {
         clientX: touch.clientX,
         clientY: touch.clientY

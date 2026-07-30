@@ -17,11 +17,9 @@ function startPlacementMiniGame(pref) {
     placementActive = true;
     currentPlacementPrefId = pref.id;
 
-    // ヘッダー・アクションボタン非表示
     document.querySelector('header').style.display = 'none';
     document.querySelector('.action-buttons').style.display = 'none';
 
-    // 展示室の対象パーツを非表示で再描画
     renderJapanMapForPlacement();
 
     document.getElementById('placement-title-text').innerText = `${pref.name}のパーツをあてはまる場所まで持っていこう！`;
@@ -41,17 +39,20 @@ function startPlacementMiniGame(pref) {
     const containerWidth = container.clientWidth || 900;
     const containerHeight = container.clientHeight || 520;
 
+    // ベース画像の縮小率計算
     const scale = Math.min(containerWidth / (baseMap.naturalWidth || 3600), containerHeight / (baseMap.naturalHeight || 2400));
     const drawWidth = (baseMap.naturalWidth || 3600) * scale;
     const drawHeight = (baseMap.naturalHeight || 2400) * scale;
     const offsetX = (containerWidth - drawWidth) / 2;
     const offsetY = (containerHeight - drawHeight) / 2;
 
-    const partW = pos.w * scale;
-    const partH = pos.h * scale;
-    const partX = offsetX + pos.x * scale;
-    const partY = offsetY + pos.y * scale;
+    // 対象パーツの本来のサイズ（回転適用前）
+    const rawW = pos.w * scale;
+    const rawH = pos.h * scale;
+    const rawX = offsetX + pos.x * scale;
+    const rawY = offsetY + pos.y * scale;
 
+    // ターゲットダミー要素の設定
     let dummyTarget = document.getElementById('placement-target-dummy');
     if (!dummyTarget) {
         dummyTarget = document.createElement('img');
@@ -62,28 +63,47 @@ function startPlacementMiniGame(pref) {
         container.appendChild(dummyTarget);
     }
     dummyTarget.src = `image/parts/${pref.id}.png`;
-    dummyTarget.style.left = `${partX}px`;
-    dummyTarget.style.top = `${partY}px`;
-    dummyTarget.style.width = `${partW}px`;
-    dummyTarget.style.height = `${partH}px`;
+    dummyTarget.style.left = `${rawX}px`;
+    dummyTarget.style.top = `${rawY}px`;
+    dummyTarget.style.width = `${rawW}px`;
+    dummyTarget.style.height = `${rawH}px`;
     dummyTarget.style.display = 'block';
 
+    // ステージ（画面）縮小率と正確なターゲット座標の算出
     const stage = document.getElementById('game-stage');
     const stageRect = stage.getBoundingClientRect();
-    const dummyRect = dummyTarget.getBoundingClientRect();
-    const currentScale = stageRect.width / stage.offsetWidth;
+    const stageScale = stageRect.width / stage.offsetWidth;
 
-    const targetX = (dummyRect.left - stageRect.left) / currentScale;
-    const targetY = (dummyRect.top - stageRect.top) / currentScale;
-    const targetW = dummyRect.width / currentScale;
-    const targetH = dummyRect.height / currentScale;
+    const mapWrapper = document.querySelector('.map-wrapper');
+    const wrapperRect = mapWrapper.getBoundingClientRect();
 
+    // 展示室の回転（15deg）・スケール（1.48）適用後のコンテナ中心座標
+    const containerCenterX = (wrapperRect.left - stageRect.left) / stageScale + wrapperRect.width / (2 * stageScale);
+    const containerCenterY = (wrapperRect.top - stageRect.top) / stageScale + wrapperRect.height / (2 * stageScale);
+
+    // 中心からの無回転オフセット
+    const mapScale = 1.48;
+    const localX = (rawX - containerWidth / 2) * mapScale;
+    const localY = (rawY - containerHeight / 2) * mapScale;
+
+    // 15度回転後の目標位置 (targetX, targetY)
+    const rad = 15 * (Math.PI / 180);
+    const rotatedX = localX * Math.cos(rad) - localY * Math.sin(rad);
+    const rotatedY = localX * Math.sin(rad) + localY * Math.cos(rad);
+
+    const targetX = containerCenterX + rotatedX;
+    const targetY = containerCenterY + rotatedY;
+    const targetW = rawW * mapScale;
+    const targetH = rawH * mapScale;
+
+    // ドラッグパーツの完全一致設定
     const dragImg = document.getElementById('placement-drag-part');
     dragImg.src = `image/parts/${pref.id}.png`;
     dragImg.style.width = `${targetW}px`;
     dragImg.style.height = `${targetH}px`;
     dragImg.style.transform = 'rotate(15deg)';
 
+    // 出現位置
     let currentX = 50;
     let currentY = 100;
     dragImg.style.left = `${currentX}px`;
@@ -94,24 +114,34 @@ function startPlacementMiniGame(pref) {
     let startMouseX = 0, startMouseY = 0;
     let startPartX = 0, startPartY = 0;
 
+    const getEventPos = (e) => {
+        if (e.touches && e.touches.length > 0) {
+            return { x: e.touches[0].clientX, y: e.touches[0].clientY };
+        }
+        if (e.changedTouches && e.changedTouches.length > 0) {
+            return { x: e.changedTouches[0].clientX, y: e.changedTouches[0].clientY };
+        }
+        return { x: e.clientX, y: e.clientY };
+    };
+
     const onMouseDown = (e) => {
+        e.preventDefault();
         isDragging = true;
-        const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-        const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-        startMouseX = clientX;
-        startMouseY = clientY;
+        const pos = getEventPos(e);
+        startMouseX = pos.x;
+        startMouseY = pos.y;
         startPartX = currentX;
         startPartY = currentY;
     };
 
     const onMouseMove = (e) => {
         if (!isDragging) return;
-        const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-        const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+        e.preventDefault();
+        const pos = getEventPos(e);
         const s = stageRect.width / stage.offsetWidth;
 
-        const dx = (clientX - startMouseX) / s;
-        const dy = (clientY - startMouseY) / s;
+        const dx = (pos.x - startMouseX) / s;
+        const dy = (pos.y - startMouseY) / s;
 
         currentX = startPartX + dx;
         currentY = startPartY + dy;
@@ -120,19 +150,20 @@ function startPlacementMiniGame(pref) {
         dragImg.style.top = `${currentY}px`;
 
         const dist = Math.hypot(currentX - targetX, currentY - targetY);
-        if (dist < 40) {
+        if (dist < 60) {
             dragImg.style.filter = 'drop-shadow(0 0 15px #ffe082) brightness(1.2)';
         } else {
             dragImg.style.filter = 'none';
         }
     };
 
-    const onMouseUp = () => {
+    const onMouseUp = (e) => {
         if (!isDragging) return;
         isDragging = false;
 
         const dist = Math.hypot(currentX - targetX, currentY - targetY);
-        if (dist < 40) {
+        // 吸着許容範囲を 60px に拡大
+        if (dist < 60) {
             dragImg.style.left = `${targetX}px`;
             dragImg.style.top = `${targetY}px`;
             dragImg.classList.add('puzzle-flash');
@@ -153,16 +184,18 @@ function startPlacementMiniGame(pref) {
         window.removeEventListener('mouseup', onMouseUp);
         window.removeEventListener('touchmove', onMouseMove);
         window.removeEventListener('touchend', onMouseUp);
+        window.removeEventListener('touchcancel', onMouseUp);
         dragImg.removeEventListener('mousedown', onMouseDown);
         dragImg.removeEventListener('touchstart', onMouseDown);
     }
 
     dragImg.addEventListener('mousedown', onMouseDown);
-    dragImg.addEventListener('touchstart', onMouseDown);
+    dragImg.addEventListener('touchstart', onMouseDown, { passive: false });
     window.addEventListener('mousemove', onMouseMove);
     window.addEventListener('mouseup', onMouseUp);
-    window.addEventListener('touchmove', onMouseMove);
+    window.addEventListener('touchmove', onMouseMove, { passive: false });
     window.addEventListener('touchend', onMouseUp);
+    window.addEventListener('touchcancel', onMouseUp);
 }
 
 function renderJapanMapForPlacement() {
@@ -226,7 +259,6 @@ function renderJapanMapForPlacement() {
 function finishPlacementMiniGame() {
     const fadeOverlay = document.getElementById('fade-overlay');
 
-    // 1. 暗転（ブラックアウト）させる
     fadeOverlay.style.opacity = '1';
 
     setTimeout(() => {
@@ -241,7 +273,6 @@ function finishPlacementMiniGame() {
 
         renderJapanMap();
 
-        // 2. フェードインして通常画面に戻す
         setTimeout(() => {
             fadeOverlay.style.opacity = '0';
         }, 150);

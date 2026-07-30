@@ -217,8 +217,9 @@ header h1 {
     position: absolute;
     top: 11px;
     left: 50%;
-    transform: translateX(-50%);
+    transform: translateX(-50%) translateZ(2px);
     padding: 5px 22px;
+    z-index: 5;
     color: #4b2a0f;
     background: linear-gradient(180deg, #f5dda0 0%, #b98532 100%);
     border: 1px solid #f9e8be;
