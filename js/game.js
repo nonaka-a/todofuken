@@ -10,6 +10,8 @@ let playerStats = {
     }
 };
 
+let bgmAudio = null;
+
 window.addEventListener('DOMContentLoaded', () => {
     initScale();
     window.addEventListener('resize', initScale);
@@ -18,8 +20,34 @@ window.addEventListener('DOMContentLoaded', () => {
     document.getElementById('btn-shop').disabled = true;
     document.getElementById('btn-excavate').disabled = true;
 
+    initBGM();
     initGame();
 });
+
+// BGM再生の初期化とループ再生ロジック
+function initBGM() {
+    bgmAudio = new Audio('sounds/BGM.mp3');
+    bgmAudio.loop = true;
+    bgmAudio.volume = 0.35; // 適度な音量に設定
+
+    const startBGM = () => {
+        if (bgmAudio) {
+            bgmAudio.play().then(() => {
+                // 自動再生が成功したらユーザー操作リスナーを削除
+                window.removeEventListener('click', startBGM);
+                window.removeEventListener('keydown', startBGM);
+                window.removeEventListener('touchstart', startBGM);
+            }).catch(e => {
+                console.log("BGM autoplay waiting for user interaction...", e);
+            });
+        }
+    };
+
+    // 初回ユーザーインタラクション時にBGM再生を開始
+    window.addEventListener('click', startBGM);
+    window.addEventListener('keydown', startBGM);
+    window.addEventListener('touchstart', startBGM);
+}
 
 function initScale() {
     const stage = document.getElementById('game-stage');
@@ -80,10 +108,8 @@ function renderJapanMap() {
     const container = document.getElementById('japan-map-container');
     container.innerHTML = ''; // 以前の描画要素をリセット
 
-    // 地図配置データを取得（prefecture_positions.js から取得。見つからない場合は空のオブジェクト）
     const positions = (typeof PREFECTURE_POSITIONS !== 'undefined') ? PREFECTURE_POSITIONS : {};
 
-    // 1. まず下敷き用の全体白地図を最背面に敷く
     const baseMap = document.createElement('img');
     baseMap.src = 'image/base_map.png';
     baseMap.style.position = 'absolute';
@@ -97,25 +123,23 @@ function renderJapanMap() {
     baseMap.style.zIndex = '1';
     container.appendChild(baseMap);
 
-    // 画像のロード完了を待ってからパーツを配置する
     baseMap.onload = () => {
-        // コンテナの実際のサイズ（CSS定義の860x500）を動的に取得
         const containerWidth = container.clientWidth || 860;
         const containerHeight = container.clientHeight || 500;
         
-        // スケール（倍率）と表示オフセットの計算
         const scale = Math.min(containerWidth / baseMap.naturalWidth, containerHeight / baseMap.naturalHeight);
         const drawWidth = baseMap.naturalWidth * scale;
         const drawHeight = baseMap.naturalHeight * scale;
         const offsetX = (containerWidth - drawWidth) / 2;
         const offsetY = (containerHeight - drawHeight) / 2;
 
-        // 2. 配置JSデータに基づいて、都道府県のパーツ画像を並べる
         PREFECTURE_DATA.forEach(p => {
-            const pos = positions[p.id];
-            if (!pos) return; // エディタで配置されなかった県は表示しない
+            // パズル設置ミニゲーム進行中のパーツは展示室地図への描画をスキップ
+            if (typeof currentPlacementPrefId !== 'undefined' && p.id === currentPlacementPrefId) return;
 
-            // 現在の最新の発掘率を取得（なければ0%）
+            const pos = positions[p.id];
+            if (!pos) return;
+
             const rate = playerStats.excavationRates[p.id] || 0;
 
             if (rate === 0) return;
@@ -125,7 +149,6 @@ function renderJapanMap() {
             img.id = `map-part-${p.id}`;
             
             img.style.position = 'absolute';
-            // 縮小および中央寄せした座標を適用
             img.style.left = `${offsetX + pos.x * scale}px`;
             img.style.top = `${offsetY + pos.y * scale}px`;
             img.style.width = `${pos.w * scale}px`;
@@ -133,10 +156,8 @@ function renderJapanMap() {
             img.style.cursor = 'pointer';
             img.style.transition = 'transform 0.2s, filter 0.2s';
             
-            // ドラッグ等の干渉を防ぐ
             img.ondragstart = () => false;
 
-            // 進捗状況に応じた表示を適用
             img.style.filter = 'none';
             if (rate < 80) {
                 img.style.zIndex = '10';
@@ -144,7 +165,6 @@ function renderJapanMap() {
                 img.style.zIndex = '15';
             }
 
-            // ホバー時の演出
             img.onmouseover = () => { 
                 img.style.transform = 'scale(1.05)'; 
                 img.style.zIndex = '20'; 
@@ -253,7 +273,6 @@ function openEncyclopedia(prefId) {
     document.getElementById('encyclopedia-modal').style.display = 'flex';
 }
 
-// 図鑑キャンバスに実際のリアルな発掘結果（残った岩・欠けたパーツ）を拡大描画する
 function drawEncyclopediaCanvas(pref, rate) {
     const canvas = document.getElementById('modal-canvas');
     const ctx = canvas.getContext('2d');
@@ -277,7 +296,6 @@ function drawEncyclopediaCanvas(pref, rate) {
             ctx.restore();
         };
     } else {
-        // 未発掘時のシルエット表示
         const img = new Image();
         img.src = `image/parts/${pref.id}.png`;
         img.onload = () => {

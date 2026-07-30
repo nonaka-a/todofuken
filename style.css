@@ -245,7 +245,6 @@ header h1 {
     filter: drop-shadow(0px 8px 10px rgba(0,0,0,0.5));
 }
 
-/* 背景として表示する正確な日本地図のアウトライン */
 .base-map {
     fill: rgba(141, 91, 40, 0.08);
     stroke: rgba(141, 91, 40, 0.25);
@@ -291,7 +290,6 @@ header h1 {
     align-items: center;
 }
 
-/* リザルト画面表示時は発掘キャンバスが見えるように背景を透明化 */
 #result-modal {
     background: rgba(0, 0, 0, 0.15);
     backdrop-filter: none;
@@ -398,7 +396,9 @@ header h1 {
 }
 
 #excavation-screen {
-    background: radial-gradient(ellipse at top, #5b3519 0%, #211108 66%);
+    background-image: url('image/BG2.jpg');
+    background-size: cover;
+    background-position: center;
     flex-direction: column;
     align-items: center;
     justify-content: center;
@@ -543,6 +543,11 @@ header h1 {
     margin-top: 10px;
 }
 
+.card-window {
+    width: 880px;
+    padding: 25px 35px;
+}
+
 .result-window {
     width: 620px;
     text-align: center;
@@ -612,4 +617,35 @@ header h1 {
     font-size: 1.2rem;
     font-weight: bold;
     margin-bottom: 15px;
+}
+
+.placement-overlay-full {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 1000px;
+    height: 720px;
+    background: rgba(0, 0, 0, 0.35);
+    backdrop-filter: none;
+    z-index: 100;
+}
+
+
+.puzzle-flash {
+    animation: puzzleFlashAnim 0.75s ease-out forwards;
+}
+
+@keyframes puzzleFlashAnim {
+    0% {
+        filter: brightness(1) drop-shadow(0 0 0px #ffffff);
+        transform: scale(1);
+    }
+    50% {
+        filter: brightness(2.2) drop-shadow(0 0 25px #fff59d);
+        transform: scale(1.15);
+    }
+    100% {
+        filter: brightness(1) drop-shadow(0 0 5px #ffd54f);
+        transform: scale(1);
+    }
 }

@@ -102,7 +102,7 @@
             <div class="game-header">
                 <button class="btn" onclick="confirmAbort()">もどる</button>
                 <div class="target-name">さがす化石: <span id="target-prefecture-name">---</span></div>
-                <div class="game-timer">のこり時間: <span id="timer-sec">60</span> 秒</div>
+                <div class="game-timer">のこり時間: <span id="timer-sec">30</span> 秒</div>
                 <div class="game-status">完成度: <span id="current-integrity">0</span>%</div>
             </div>
 
@@ -155,8 +155,8 @@
         <!-- 6. リザルトモーダル -->
         <div id="result-modal" class="modal-overlay">
             <div class="modal-window result-window">
-                <h2>はっくつ結果</h2>
-                <p id="result-pref-display" class="result-target-text"></p>
+                <div id="result-first-tag" style="display: none; color: #d32f2f; font-size: 1.4rem; font-weight: bold; margin-bottom: 5px;">初発掘！</div>
+                <p id="result-pref-display" class="result-target-text" style="font-size: 2rem; font-weight: bold; color: var(--primary-dark); margin-bottom: 10px;"></p>
                 <div class="result-visual">
                     <img id="result-fossil-img" src="" alt="発掘結果">
                 </div>
@@ -167,12 +167,26 @@
             </div>
         </div>
 
+        <!-- 7. パズル設置演出モーダル -->
+        <div id="placement-overlay" class="modal-overlay placement-overlay-full">
+            <div id="placement-title-text" style="position: absolute; top: 25px; width: 100%; text-align: center; color: #fff; font-size: 1.6rem; font-weight: bold; text-shadow: 0 2px 8px #000; pointer-events: none; z-index: 102;">
+                パーツをあてはまる場所まで持っていこう！
+            </div>
+            <img id="placement-drag-part" src="" alt="設置パーツ" style="position: absolute; cursor: grab; z-index: 101; display: none; transition: filter 0.2s;">
+        </div>
+
+        <!-- 暗転フェード用オーバーレイ -->
+        <div id="fade-overlay" style="position: absolute; top: 0; left: 0; width: 1000px; height: 720px; background-color: #000; opacity: 0; pointer-events: none; z-index: 200; transition: opacity 0.4s ease;"></div>
+
     </div>
 
     <!-- エディタから書き出されるJSファイルを読み込ませる -->
     <script src="js/prefecture_positions.js"></script>
     <script src="js/japan_data.js"></script>
     <script src="js/game.js"></script>
+    <script src="js/placement_game.js"></script>
+    <script src="js/excavation_audio.js"></script>
+    <script src="js/excavation_render.js"></script>
     <script src="js/excavation.js"></script>
 </body>
 </html>
