@@ -86,13 +86,20 @@
 
         <!-- 3. 発掘場所選択モーダル -->
         <div id="area-select-modal" class="modal-overlay">
-            <div class="modal-window">
+            <div class="modal-window area-select-window">
                 <div class="modal-header">
                     <h2>発掘する場所を選ぶ</h2>
                     <button class="btn-close" onclick="closeAreaSelect()">とじる</button>
                 </div>
-                <div class="area-grid" id="area-grid">
-                    <!-- jsでカード生成 -->
+                <div class="carousel-wrapper" id="carousel-wrapper">
+                    <div class="carousel-track" id="area-carousel-track">
+                        <!-- JSでカードを動的生成 -->
+                    </div>
+                </div>
+                <div class="carousel-controls">
+                    <button class="carousel-arrow" onclick="moveCarousel(-1)">❮</button>
+                    <div class="carousel-dots" id="carousel-dots"></div>
+                    <button class="carousel-arrow" onclick="moveCarousel(1)">❯</button>
                 </div>
             </div>
         </div>

@@ -28,6 +28,9 @@ function startAreaExcavation(regionName) {
         return;
     }
 
+    playerStats.lastRegion = regionName;
+    saveGame();
+
     activePrefecture = prefs[Math.floor(Math.random() * prefs.length)];
     initExcavationGame();
 }

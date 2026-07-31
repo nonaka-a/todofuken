@@ -11,6 +11,10 @@ let playerStats = {
 };
 
 let bgmAudio = null;
+let carouselIndex = 0;
+let carouselRegions = [];
+let dragStartX = 0;
+let isDraggingCarousel = false;
 
 window.addEventListener('DOMContentLoaded', () => {
     initScale();
@@ -252,12 +256,23 @@ function toggleAreaHint(event, regionName) {
 }
 
 function openAreaSelect() {
-    const grid = document.getElementById('area-grid');
-    grid.innerHTML = '';
+    carouselRegions = [...new Set(PREFECTURE_DATA.map(p => p.region))];
+    
+    if (playerStats.lastRegion) {
+        const lastIdx = carouselRegions.indexOf(playerStats.lastRegion);
+        carouselIndex = lastIdx !== -1 ? lastIdx : 0;
+    } else {
+        carouselIndex = 0;
+    }
 
-    const activeRegions = [...new Set(PREFECTURE_DATA.map(p => p.region))];
+    const track = document.getElementById('area-carousel-track');
+    const dotsContainer = document.getElementById('carousel-dots');
+    if (!track || !dotsContainer) return;
 
-    activeRegions.forEach(regionName => {
+    track.innerHTML = '';
+    dotsContainer.innerHTML = '';
+
+    carouselRegions.forEach((regionName, idx) => {
         const regionPrefs = PREFECTURE_DATA.filter(p => p.region === regionName);
         const totalCount = regionPrefs.length;
         const foundCount = regionPrefs.filter(p => (playerStats.excavationRates[p.id] || 0) > 0).length;
@@ -268,23 +283,127 @@ function openAreaSelect() {
 
         const card = document.createElement('div');
         card.className = 'area-card';
-        card.onclick = () => startAreaExcavation(regionName);
+        card.dataset.index = idx;
         card.innerHTML = `
-            <h4>${regionName}地層 <span style="font-size: 0.95rem; font-weight: normal; color: #6d3f1f;">(${foundCount}/${totalCount})</span></h4>
-            <div class="area-info-item">
-                <span class="area-label-badge">地質の特徴</span><br>${details.feature}
+            <div>
+                <h4>${regionName}地層 <span style="font-size: 0.95rem; font-weight: normal; color: #6d3f1f;">(${foundCount}/${totalCount})</span></h4>
+                <div class="area-info-item">
+                    <span class="area-label-badge">地質の特徴</span><br>${details.feature}
+                </div>
             </div>
             <div class="area-card-footer">
                 <div class="area-hint-popout" id="hint-popout-${regionName}">
                     ${details.hint}
                 </div>
-                <button type="button" class="btn-area-hint" onclick="toggleAreaHint(event, '${regionName}')">発掘のヒント</button>
+                <div style="display: flex; gap: 8px; align-items: center; margin-top: 8px;">
+                    <button type="button" class="btn-area-hint" onclick="toggleAreaHint(event, '${regionName}')">発掘のヒント</button>
+                </div>
+                <button class="btn btn-accent btn-start-excavate" onclick="onCardClick(event, ${idx}, '${regionName}')">この場所を発掘する</button>
             </div>
         `;
-        grid.appendChild(card);
+        track.appendChild(card);
+
+        const dot = document.createElement('div');
+        dot.className = `carousel-dot ${idx === 0 ? 'active' : ''}`;
+        dot.onclick = () => setCarouselIndex(idx);
+        dotsContainer.appendChild(dot);
     });
 
+    setupCarouselDrag();
+    updateCarousel();
+
     document.getElementById('area-select-modal').style.display = 'flex';
+}
+
+function updateCarousel() {
+    const cards = document.querySelectorAll('.area-card');
+    const dots = document.querySelectorAll('.carousel-dot');
+    const total = carouselRegions.length;
+
+    cards.forEach((card, i) => {
+        let diff = i - carouselIndex;
+
+        if (diff > total / 2) diff -= total;
+        if (diff < -total / 2) diff += total;
+
+        const absDiff = Math.abs(diff);
+
+        let tx = diff * 220; 
+        let tz = -absDiff * 150;
+        let ry = diff * -25;
+        let scale = Math.max(0.6, 1 - absDiff * 0.2);
+        let opacity = absDiff > 2 ? 0 : Math.max(0, 1 - absDiff * 0.35);
+        let pointerEvents = absDiff === 0 ? 'auto' : (absDiff <= 1 ? 'auto' : 'none');
+
+        card.style.setProperty('--tx', `${tx}px`);
+        card.style.setProperty('--tz', `${tz}px`);
+        card.style.setProperty('--ry', `${ry}deg`);
+        card.style.setProperty('--sc', `${scale}`);
+
+        card.style.transform = `translate3d(${tx}px, 0, ${tz}px) rotateY(${ry}deg) scale(${scale})`;
+        card.style.opacity = opacity;
+        card.style.zIndex = 100 - absDiff * 10;
+        card.style.pointerEvents = pointerEvents;
+
+        if (diff === 0) {
+            card.classList.add('active-card');
+        } else {
+            card.classList.remove('active-card');
+        }
+    });
+
+    dots.forEach((dot, i) => {
+        dot.classList.toggle('active', i === carouselIndex);
+    });
+}
+
+function moveCarousel(dir) {
+    if (carouselRegions.length === 0) return;
+    carouselIndex = (carouselIndex + dir + carouselRegions.length) % carouselRegions.length;
+    updateCarousel();
+}
+
+function setCarouselIndex(idx) {
+    carouselIndex = idx;
+    updateCarousel();
+}
+
+function onCardClick(event, idx, regionName) {
+    event.stopPropagation();
+    if (idx !== carouselIndex) {
+        setCarouselIndex(idx);
+    } else {
+        startAreaExcavation(regionName);
+    }
+}
+
+function setupCarouselDrag() {
+    const wrapper = document.getElementById('carousel-wrapper');
+    if (!wrapper) return;
+
+    const getX = e => e.touches ? e.touches[0].clientX : e.clientX;
+
+    const handleStart = e => {
+        isDraggingCarousel = true;
+        dragStartX = getX(e);
+    };
+
+    const handleEnd = e => {
+        if (!isDraggingCarousel) return;
+        isDraggingCarousel = false;
+        const diffX = (e.changedTouches ? e.changedTouches[0].clientX : e.clientX) - dragStartX;
+
+        if (diffX < -40) {
+            moveCarousel(1);
+        } else if (diffX > 40) {
+            moveCarousel(-1);
+        }
+    };
+
+    wrapper.onmousedown = handleStart;
+    wrapper.onmouseup = handleEnd;
+    wrapper.ontouchstart = handleStart;
+    wrapper.ontouchend = handleEnd;
 }
 
 function closeAreaSelect() {
