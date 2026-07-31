@@ -246,6 +246,7 @@ function renderJapanMapForPlacement() {
             img.style.height = `${pos.h * scale}px`;
             img.style.filter = 'none';
             img.style.zIndex = rate >= 80 ? '15' : '10';
+            img.style.pointerEvents = 'none';
 
             container.appendChild(img);
         });

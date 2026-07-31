@@ -31,7 +31,18 @@ function startAreaExcavation(regionName) {
     playerStats.lastRegion = regionName;
     saveGame();
 
-    activePrefecture = prefs[Math.floor(Math.random() * prefs.length)];
+    // 未獲得（完成度0%）の都道府県の出現確率（重み）を高く設定
+    const weightedPrefs = [];
+    prefs.forEach(p => {
+        const rate = playerStats.excavationRates[p.id] || 0;
+        // 未獲得なら重み5（約5倍出現しやすい）、獲得済みなら重み1
+        const weight = rate === 0 ? 5 : 1;
+        for (let i = 0; i < weight; i++) {
+            weightedPrefs.push(p);
+        }
+    });
+
+    activePrefecture = weightedPrefs[Math.floor(Math.random() * weightedPrefs.length)];
     initExcavationGame();
 }
 

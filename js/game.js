@@ -188,7 +188,39 @@ function renderJapanMap() {
                 img.style.zIndex = rate >= 80 ? '15' : (rate > 0 ? '10' : '5');
             };
 
-            img.onclick = () => openEncyclopedia(p.id);
+            // ピクセル単位の不透明度チェックと透過クリック（スルー）処理
+            let imgCanvas = null;
+            let imgCtx = null;
+
+            img.onclick = (e) => {
+                if (!imgCanvas) {
+                    imgCanvas = document.createElement('canvas');
+                    imgCanvas.width = img.naturalWidth;
+                    imgCanvas.height = img.naturalHeight;
+                    imgCtx = imgCanvas.getContext('2d');
+                    imgCtx.drawImage(img, 0, 0);
+                }
+
+                const rect = img.getBoundingClientRect();
+                const clickX = Math.floor((e.clientX - rect.left) * (img.naturalWidth / rect.width));
+                const clickY = Math.floor((e.clientY - rect.top) * (img.naturalHeight / rect.height));
+
+                if (clickX >= 0 && clickX < img.naturalWidth && clickY >= 0 && clickY < img.naturalHeight) {
+                    const alpha = imgCtx.getImageData(clickX, clickY, 1, 1).data[3];
+                    // 透明（Alpha <= 30）な場合はクリックを通過させて背後の要素を探す
+                    if (alpha <= 30) {
+                        img.style.pointerEvents = 'none';
+                        const underlyingElement = document.elementFromPoint(e.clientX, e.clientY);
+                        img.style.pointerEvents = 'auto';
+
+                        if (underlyingElement && underlyingElement.onclick && underlyingElement !== img) {
+                            underlyingElement.onclick(e);
+                        }
+                        return;
+                    }
+                }
+                openEncyclopedia(p.id);
+            };
             
             container.appendChild(img);
         });
@@ -201,6 +233,7 @@ function renderJapanMap() {
     updateVisitors();
 }
 
+// game.js 内の updateVisitors
 // game.js 内の updateVisitors
 function updateVisitors() {
     const container = document.getElementById('museum-visitors');
@@ -215,21 +248,27 @@ function updateVisitors() {
     }
 
     const count = PREFECTURE_DATA.filter(p => (playerStats.excavationRates[p.id] || 0) > 0).length;
+    const totalPrefectures = PREFECTURE_DATA.length;
 
-    const visitors = [];
-    if (count >= 1)  visitors.push('image/p01.png');
-    if (count >= 15) visitors.push('image/p02.png');
-    if (count >= 35) visitors.push('image/p03.png');
+    let visitorImageSrc = null;
+    if (count >= totalPrefectures) {
+        visitorImageSrc = 'image/p05.png';
+    } else if (count >= 40) {
+        visitorImageSrc = 'image/p04.png';
+    } else if (count >= 30) {
+        visitorImageSrc = 'image/p03.png';
+    } else if (count >= 15) {
+        visitorImageSrc = 'image/p02.png';
+    } else if (count >= 5) {
+        visitorImageSrc = 'image/p01.png';
+    }
 
     container.innerHTML = '';
-    visitors.forEach(src => {
+    if (visitorImageSrc) {
         const img = document.createElement('img');
-        img.src = src;
+        img.src = visitorImageSrc;
         img.className = 'museum-visitor-img';
         container.appendChild(img);
-    });
-
-    if (visitors.length > 0) {
         container.style.display = 'flex';
     } else {
         container.style.display = 'none';
@@ -240,11 +279,15 @@ function updateUI() {
     document.getElementById('player-gold').innerText = playerStats.gold;
 
     let sum = 0;
+    let count = 0;
     PREFECTURE_DATA.forEach(p => {
-        sum += playerStats.excavationRates[p.id] || 0;
+        const rate = playerStats.excavationRates[p.id] || 0;
+        sum += rate;
+        if (rate > 0) count++;
     });
     const avg = Math.round(sum / PREFECTURE_DATA.length);
     document.getElementById('total-completion').innerText = avg;
+    document.getElementById('total-count').innerText = count;
 
     if (!playerStats.toolLevels.hammer) playerStats.toolLevels.hammer = 1;
 
