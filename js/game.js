@@ -90,6 +90,9 @@ async function initGame() {
     document.getElementById('btn-excavate').disabled = false;
 }
 
+
+
+
 function saveGame() {
     try {
         localStorage.setItem('japan_museum_save', JSON.stringify(playerStats));
@@ -193,6 +196,43 @@ function renderJapanMap() {
 
     if (baseMap.complete) {
         baseMap.onload();
+    }
+
+    updateVisitors();
+}
+
+// game.js 内の updateVisitors
+function updateVisitors() {
+    const container = document.getElementById('museum-visitors');
+    if (!container) return;
+
+    const museumScreen = document.getElementById('museum-screen');
+    // 展示室画面が存在しない、または active クラスを持っていない場合は完全に非表示
+    if (!museumScreen || !museumScreen.classList.contains('active')) {
+        container.style.display = 'none !important';
+        container.setAttribute('style', 'display: none !important;');
+        return;
+    }
+
+    const count = PREFECTURE_DATA.filter(p => (playerStats.excavationRates[p.id] || 0) > 0).length;
+
+    const visitors = [];
+    if (count >= 1)  visitors.push('image/p01.png');
+    if (count >= 15) visitors.push('image/p02.png');
+    if (count >= 35) visitors.push('image/p03.png');
+
+    container.innerHTML = '';
+    visitors.forEach(src => {
+        const img = document.createElement('img');
+        img.src = src;
+        img.className = 'museum-visitor-img';
+        container.appendChild(img);
+    });
+
+    if (visitors.length > 0) {
+        container.style.display = 'flex';
+    } else {
+        container.style.display = 'none';
     }
 }
 

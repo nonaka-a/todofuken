@@ -36,6 +36,11 @@ function startAreaExcavation(regionName) {
 }
 
 function initExcavationGame() {
+    const visitors = document.getElementById('museum-visitors');
+    if (visitors) {
+        visitors.style.display = 'none';
+    }
+
     document.querySelectorAll('.screen').forEach(screen => screen.classList.remove('active'));
     document.getElementById('excavation-screen').classList.add('active');
 

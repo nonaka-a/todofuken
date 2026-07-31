@@ -884,3 +884,28 @@ header h1 {
         transform: scale(1);
     }
 }
+
+/* 展示室のお客さんレイヤー */
+#museum-visitors {
+    position: absolute !important;
+    top: auto !important;     /* 上からの固定を解除 */
+    bottom: 00px !important;  /* ★ここでY軸を調整（数値を大きくすると上がります） */
+    left: 0 !important;
+    width: 1000px !important;
+    height: 200px !important;
+    z-index: 00 !important;
+    pointer-events: none !important;
+    display: flex !important;
+    justify-content: center !important;
+    align-items: flex-end !important;
+    gap: 15px !important;
+}
+
+.museum-visitor-img {
+    position: absolute !important; /* 画像同士を全く同じ位置に重ねる */
+    bottom: 0 !important;
+    height: 700px !important;
+    width: auto !important;
+    object-fit: contain !important;
+    filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.0)) !important;
+}
