@@ -86,6 +86,7 @@ function drawUnderground() {
     }
 }
 
+
 function drawRock() {
     const canvasWidth = topCanvas.width;
     const canvasHeight = topCanvas.height;
@@ -112,13 +113,28 @@ function drawRock() {
     }
     topCtx.closePath();
 
+    // 地層ごとのカラー定義（中心ハイライト、中間色、外周暗部）
+    const regionColors = {
+        'ホッカイドー': { inner: '#2a4365', mid: '#1a2a40', outer: '#0f172a' }, // ディープブルー
+        'トウホク':     { inner: '#3b5336', mid: '#283824', outer: '#141d12' }, // モスグリーン
+        'カントー':     { inner: '#7c3f2d', mid: '#53291d', outer: '#2c150e' }, // テラコッタ
+        'チュウブ':     { inner: '#544e45', mid: '#3e3933', outer: '#23201d' }, // 現状（岩色）
+        'キンキ':       { inner: '#7a6328', mid: '#52421a', outer: '#2b220d' }, // ゴールデンイエロー
+        'チュウゴク':   { inner: '#5a626a', mid: '#3d4349', outer: '#202327' }, // グレー
+        'シコク':       { inner: '#524364', mid: '#382d45', outer: '#1d1724' }, // アッシュバイオレット
+        'キュウシュー': { inner: '#383838', mid: '#242424', outer: '#121212' }  // チャコール
+    };
+
+    const regionName = activePrefecture ? activePrefecture.region : '';
+    const colors = regionColors[regionName] || regionColors['チュウブ'];
+
     const rockGradient = topCtx.createRadialGradient(
         centerX - 40, centerY - 40, 20,
         centerX, centerY, baseRadius * 1.4
     );
-    rockGradient.addColorStop(0, '#544e45');
-    rockGradient.addColorStop(0.6, '#3e3933');
-    rockGradient.addColorStop(1, '#23201d');
+    rockGradient.addColorStop(0, colors.inner);
+    rockGradient.addColorStop(0.6, colors.mid);
+    rockGradient.addColorStop(1, colors.outer);
     
     topCtx.fillStyle = rockGradient;
     topCtx.fill();

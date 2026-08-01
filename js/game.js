@@ -5,8 +5,7 @@ let playerStats = {
     excavationImages: {},
     toolLevels: {
         hammer: 1,
-        brush: 1,
-        chisel: 1
+        brush: 1
     }
 };
 
@@ -89,9 +88,6 @@ async function initGame() {
     document.getElementById('btn-shop').disabled = false;
     document.getElementById('btn-excavate').disabled = false;
 }
-
-
-
 
 function saveGame() {
     try {
@@ -188,7 +184,6 @@ function renderJapanMap() {
                 img.style.zIndex = rate >= 80 ? '15' : (rate > 0 ? '10' : '5');
             };
 
-            // ピクセル単位の不透明度チェックと透過クリック（スルー）処理
             let imgCanvas = null;
             let imgCtx = null;
 
@@ -207,7 +202,6 @@ function renderJapanMap() {
 
                 if (clickX >= 0 && clickX < img.naturalWidth && clickY >= 0 && clickY < img.naturalHeight) {
                     const alpha = imgCtx.getImageData(clickX, clickY, 1, 1).data[3];
-                    // 透明（Alpha <= 30）な場合はクリックを通過させて背後の要素を探す
                     if (alpha <= 30) {
                         img.style.pointerEvents = 'none';
                         const underlyingElement = document.elementFromPoint(e.clientX, e.clientY);
@@ -233,14 +227,11 @@ function renderJapanMap() {
     updateVisitors();
 }
 
-// game.js 内の updateVisitors
-// game.js 内の updateVisitors
 function updateVisitors() {
     const container = document.getElementById('museum-visitors');
     if (!container) return;
 
     const museumScreen = document.getElementById('museum-screen');
-    // 展示室画面が存在しない、または active クラスを持っていない場合は完全に非表示
     if (!museumScreen || !museumScreen.classList.contains('active')) {
         container.style.display = 'none !important';
         container.setAttribute('style', 'display: none !important;');
@@ -295,8 +286,6 @@ function updateUI() {
     document.getElementById('hammer-cost').innerText = playerStats.toolLevels.hammer * 120;
     document.getElementById('brush-level').innerText = playerStats.toolLevels.brush;
     document.getElementById('brush-cost').innerText = playerStats.toolLevels.brush * 100;
-    document.getElementById('chisel-level').innerText = playerStats.toolLevels.chisel;
-    document.getElementById('chisel-cost').innerText = playerStats.toolLevels.chisel * 150;
 }
 
 function openShop() {
@@ -311,7 +300,6 @@ function upgradeTool(tool) {
     const level = playerStats.toolLevels[tool] || 1;
     let cost = level * 100;
     if (tool === 'hammer') cost = level * 120;
-    if (tool === 'chisel') cost = level * 150;
 
     if (playerStats.gold >= cost) {
         playerStats.gold -= cost;

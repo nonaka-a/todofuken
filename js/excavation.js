@@ -15,8 +15,6 @@ let fossilReady = false;
 let excavationScore = 0;
 let lastDustTime = 0;
 
-let chiselStrikePoints = [];
-let nextChiselStrikeId = 0;
 let activeRockFragments = [];
 let fragmentAnimFrame = null;
 
@@ -31,11 +29,9 @@ function startAreaExcavation(regionName) {
     playerStats.lastRegion = regionName;
     saveGame();
 
-    // 未獲得（完成度0%）の都道府県の出現確率（重み）を高く設定
     const weightedPrefs = [];
     prefs.forEach(p => {
         const rate = playerStats.excavationRates[p.id] || 0;
-        // 未獲得なら重み5（約5倍出現しやすい）、獲得済みなら重み1
         const weight = rate === 0 ? 5 : 1;
         for (let i = 0; i < weight; i++) {
             weightedPrefs.push(p);
@@ -61,8 +57,6 @@ function initExcavationGame() {
     excavationScore = 0;
     activeTool = 'hammer';
     lastDustTime = 0;
-    chiselStrikePoints = [];
-    nextChiselStrikeId = 0;
     activeRockFragments = [];
     if (fragmentAnimFrame) cancelAnimationFrame(fragmentAnimFrame);
 
@@ -140,7 +134,6 @@ function setTool(tool) {
     const hammerBtn = document.getElementById('tool-hammer');
     if(hammerBtn) hammerBtn.classList.toggle('active', tool === 'hammer');
     document.getElementById('tool-brush').classList.toggle('active', tool === 'brush');
-    document.getElementById('tool-chisel').classList.toggle('active', tool === 'chisel');
 }
 
 function handleStart(event) {
@@ -150,7 +143,7 @@ function handleStart(event) {
 
 function handleMove(event) {
     if (!isDrawing) return;
-    if (activeTool === 'hammer' || activeTool === 'chisel') return;
+    if (activeTool === 'hammer') return;
     scratch(event);
 }
 
@@ -163,7 +156,6 @@ function scratch(event) {
 
     const point = getCanvasPoint(event);
     const brushLevel = playerStats.toolLevels.brush || 1;
-    const chiselLevel = playerStats.toolLevels.chisel || 1;
     const hammerLevel = playerStats.toolLevels.hammer || 1;
 
     if (activeTool === 'hammer') {
@@ -172,10 +164,6 @@ function scratch(event) {
         checkAreaDamageFossil(point.x, point.y, radius * 0.65);
         removeRockRandomShape(point.x, point.y, radius);
         spawnHammerFragments(point.x, point.y, radius);
-    } else if (activeTool === 'chisel') {
-        const radius = 6 + chiselLevel * 1.5;
-        checkAreaDamageFossil(point.x, point.y, radius * 0.8);
-        strikeRock(point.x, point.y, chiselLevel, radius);
     } else if (activeTool === 'brush') {
         removeRockIrregular(point.x, point.y, 22 + brushLevel * 4, Math.min(0.5, 0.28 + brushLevel * 0.06));
         createDustParticles(point.x, point.y);
@@ -261,27 +249,6 @@ function removeRockRandomShape(centerX, centerY, baseRadius) {
     cleanupTopAlpha(centerX, centerY, baseRadius * 1.3);
 }
 
-function removeRockSnap(centerX, centerY, baseRadius) {
-    topCtx.save();
-    topCtx.globalCompositeOperation = 'destination-out';
-    topCtx.globalAlpha = 1.0; 
-    topCtx.beginPath();
-    
-    const pointsCount = 8;
-    for (let i = 0; i < pointsCount; i++) {
-        const angle = (Math.PI * 2 * i) / pointsCount;
-        const px = centerX + Math.cos(angle) * baseRadius;
-        const py = centerY + Math.sin(angle) * baseRadius;
-        if (i === 0) topCtx.moveTo(px, py);
-        else topCtx.lineTo(px, py);
-    }
-    topCtx.closePath();
-    topCtx.fill();
-    topCtx.restore();
-
-    cleanupTopAlpha(centerX, centerY, baseRadius);
-}
-
 function removeRockIrregular(centerX, centerY, baseRadius, opacity) {
     topCtx.save();
     topCtx.globalCompositeOperation = 'destination-out';
@@ -300,88 +267,6 @@ function removeRockIrregular(centerX, centerY, baseRadius, opacity) {
     topCtx.closePath();
     topCtx.fill();
     topCtx.restore();
-}
-
-function strikeRock(x, y, chiselLevel, radius) {
-    const strikePoint = { id: nextChiselStrikeId++, x, y };
-    const nearestPoint = findNearbyStrikePoint(strikePoint, 78 + chiselLevel * 3);
-    
-    if (nearestPoint) {
-        drawConnectedCrack(nearestPoint, strikePoint, chiselLevel);
-    } else {
-        drawImpactCrack(x, y);
-    }
-
-    chiselStrikePoints.push(strikePoint);
-    if (chiselStrikePoints.length > 70) chiselStrikePoints.shift();
-
-    removeRockSnap(x, y, radius);
-}
-
-function findNearbyStrikePoint(strikePoint, maxDistance) {
-    let nearestPoint = null;
-    let nearestDistance = maxDistance;
-
-    chiselStrikePoints.forEach(point => {
-        const distance = Math.hypot(point.x - strikePoint.x, point.y - strikePoint.y);
-        if (distance > 18 && distance < nearestDistance) {
-            nearestPoint = point;
-            nearestDistance = distance;
-        }
-    });
-
-    return nearestPoint;
-}
-
-function drawImpactCrack(x, y) {
-    topCtx.save();
-    topCtx.globalCompositeOperation = 'destination-out';
-    topCtx.globalAlpha = 1.0;
-    topCtx.lineWidth = 3;
-    topCtx.lineCap = 'round';
-    topCtx.beginPath();
-    topCtx.moveTo(x - 8, y + 5);
-    topCtx.lineTo(x, y);
-    topCtx.lineTo(x + 9, y - 6);
-    topCtx.stroke();
-    topCtx.restore();
-
-    cleanupTopAlpha(x, y, 15);
-}
-
-function drawConnectedCrack(fromPoint, toPoint, chiselLevel) {
-    const distance = Math.hypot(toPoint.x - fromPoint.x, toPoint.y - fromPoint.y);
-    const steps = Math.max(3, Math.ceil(distance / 18));
-    const offsetX = toPoint.x - fromPoint.x;
-    const offsetY = toPoint.y - fromPoint.y;
-    const normalLength = Math.hypot(offsetX, offsetY);
-    const normalX = -offsetY / normalLength;
-    const normalY = offsetX / normalLength;
-    const points = [fromPoint];
-
-    for (let index = 1; index < steps; index++) {
-        const progress = index / steps;
-        const jaggedness = (Math.random() - 0.5) * (10 + chiselLevel * 2);
-        points.push({
-            x: fromPoint.x + offsetX * progress + normalX * jaggedness,
-            y: fromPoint.y + offsetY * progress + normalY * jaggedness
-        });
-    }
-    points.push(toPoint);
-
-    topCtx.save();
-    topCtx.globalCompositeOperation = 'destination-out';
-    topCtx.globalAlpha = 1.0;
-    topCtx.lineWidth = 3 + chiselLevel * 0.5;
-    topCtx.lineCap = 'round';
-    topCtx.lineJoin = 'round';
-    topCtx.beginPath();
-    topCtx.moveTo(points[0].x, points[0].y);
-    points.slice(1).forEach(point => topCtx.lineTo(point.x, point.y));
-    topCtx.stroke();
-    topCtx.restore();
-
-    cleanupTopAlpha(toPoint.x, toPoint.y, distance + 10);
 }
 
 function getCanvasPoint(event) {
