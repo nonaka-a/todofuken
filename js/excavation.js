@@ -164,7 +164,8 @@ function scratch(event) {
         checkAreaDamageFossil(point.x, point.y, radius * 0.65);
         removeRockRandomShape(point.x, point.y, radius);
         spawnHammerFragments(point.x, point.y, radius);
-    } else if (activeTool === 'brush') {
+   } else if (activeTool === 'brush') {
+        playBrushSound();
         removeRockIrregular(point.x, point.y, 22 + brushLevel * 4, Math.min(0.5, 0.28 + brushLevel * 0.06));
         createDustParticles(point.x, point.y);
     }

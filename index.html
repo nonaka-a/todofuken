@@ -24,8 +24,8 @@
                 <div class="stat-badge">
                     日本列島完成度: <span id="total-completion">0</span>%
                 </div>
-                <!-- セーブデータ初期化ボタンを追加 -->
-                <button class="btn btn-secondary" onclick="resetSaveData()" style="padding: 6px 12px; font-size: 0.85rem; background-color: #d32f2f;">データを消す</button>
+                <!-- 設定ボタンに変更 -->
+                <button class="btn btn-secondary" onclick="openSettings()" style="padding: 6px 12px; font-size: 0.85rem; background-color: #5d4037;">設定</button>
             </div>
         </header>
 
@@ -185,6 +185,39 @@
                 <div style="display: flex; justify-content: center; gap: 15px;">
                     <button id="btn-confirm-ok" class="btn btn-accent" style="padding: 8px 24px;">はい</button>
                     <button id="btn-confirm-cancel" class="btn" style="padding: 8px 24px;">いいえ</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 9. 設定モーダル -->
+        <div id="settings-modal" class="modal-overlay">
+            <div class="modal-window shop-window">
+                <div class="modal-header">
+                    <h2>設定</h2>
+                    <button class="btn-close" onclick="closeSettings()">とじる</button>
+                </div>
+                <div class="shop-list">
+                    <div class="shop-item">
+                        <div class="shop-item-info">
+                            <strong>BGM音量</strong>
+                        </div>
+                        <button id="btn-toggle-bgm" class="btn btn-accent" onclick="toggleBGM()">ON</button>
+                    </div>
+                    <div class="shop-item">
+                        <div class="shop-item-info">
+                            <strong>効果音 (SE)</strong>
+                        </div>
+                        <button id="btn-toggle-se" class="btn btn-accent" onclick="toggleSE()">ON</button>
+                    </div>
+                    <div class="shop-item">
+                        <div class="shop-item-info">
+                            <strong>全画面表示</strong>
+                        </div>
+                        <button id="btn-toggle-fullscreen" class="btn btn-accent" onclick="toggleFullscreen()">切替</button>
+                    </div>
+                    <div class="shop-item" style="justify-content: center; margin-top: 10px;">
+                        <button class="btn" onclick="resetSaveData()" style="background-color: #d32f2f; width: 100%;">データを消す</button>
+                    </div>
                 </div>
             </div>
         </div>

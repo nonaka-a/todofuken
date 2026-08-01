@@ -184,6 +184,12 @@ function startPlacementMiniGame(pref) {
                 dragImg.style.top = `${targetY}px`;
                 dragImg.classList.add('puzzle-flash');
 
+                if (typeof audioSettings === 'undefined' || audioSettings.se) {
+                    const shineAudio = new Audio('sounds/Shine.mp3');
+                    shineAudio.volume = 0.6;
+                    shineAudio.play().catch(e => console.log("Audio play blocked", e));
+                }
+
                 setTimeout(() => {
                     dragImg.classList.remove('puzzle-flash');
                     dragImg.remove();

@@ -9,16 +9,31 @@ let playerStats = {
     }
 };
 
+let audioSettings = {
+    bgm: true,
+    se: true
+};
+
 let bgmAudio = null;
 let carouselIndex = 0;
 let carouselRegions = [];
 let dragStartX = 0;
 let isDraggingCarousel = false;
+let lastTouchEnd = 0;
 
 window.addEventListener('DOMContentLoaded', () => {
     initScale();
     window.addEventListener('resize', initScale);
     
+    // iPadなどのダブルタップによるズーム動作を防止
+    document.addEventListener('touchend', (event) => {
+        const now = Date.now();
+        if (now - lastTouchEnd <= 300) {
+            event.preventDefault();
+        }
+        lastTouchEnd = now;
+    }, false);
+
     document.getElementById('btn-shop').disabled = true;
     document.getElementById('btn-excavate').disabled = true;
 
@@ -327,8 +342,20 @@ function toggleAreaHint(event, regionName) {
 }
 
 function openAreaSelect() {
-    carouselRegions = [...new Set(PREFECTURE_DATA.map(p => p.region))];
+    const defaultOrder = [
+        "キュウシュー",
+        "シコク",
+        "チュウゴク",
+        "キンキ",
+        "チュウブ",
+        "カントー",
+        "トウホク",
+        "ホッカイドー"
+    ];
     
+    const existingRegions = [...new Set(PREFECTURE_DATA.map(p => p.region))];
+    carouselRegions = defaultOrder.filter(r => existingRegions.includes(r));
+
     if (playerStats.lastRegion) {
         const lastIdx = carouselRegions.indexOf(playerStats.lastRegion);
         carouselIndex = lastIdx !== -1 ? lastIdx : 0;
@@ -546,4 +573,49 @@ function drawEncyclopediaCanvas(pref, rate) {
 
 function closeEncyclopedia() {
     document.getElementById('encyclopedia-modal').style.display = 'none';
+}
+
+function openSettings() {
+    updateSettingsUI();
+    document.getElementById('settings-modal').style.display = 'flex';
+}
+
+function closeSettings() {
+    document.getElementById('settings-modal').style.display = 'none';
+}
+
+function updateSettingsUI() {
+    const bgmBtn = document.getElementById('btn-toggle-bgm');
+    const seBtn = document.getElementById('btn-toggle-se');
+    if (bgmBtn) bgmBtn.innerText = audioSettings.bgm ? 'ON' : 'OFF';
+    if (seBtn) seBtn.innerText = audioSettings.se ? 'ON' : 'OFF';
+}
+
+function toggleBGM() {
+    audioSettings.bgm = !audioSettings.bgm;
+    if (bgmAudio) {
+        if (audioSettings.bgm) {
+            bgmAudio.play().catch(e => console.log(e));
+        } else {
+            bgmAudio.pause();
+        }
+    }
+    updateSettingsUI();
+}
+
+function toggleSE() {
+    audioSettings.se = !audioSettings.se;
+    updateSettingsUI();
+}
+
+function toggleFullscreen() {
+    if (!document.fullscreenElement) {
+        document.documentElement.requestFullscreen().catch(err => {
+            alert(`全画面表示に失敗しました: ${err.message}`);
+        });
+    } else {
+        if (document.exitFullscreen) {
+            document.exitFullscreen();
+        }
+    }
 }
