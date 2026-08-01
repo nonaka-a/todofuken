@@ -1,12 +1,20 @@
 let lastBrushSoundTime = 0;
 
+const hammerAudioPool = [
+    new Audio('sounds/block_destruction1.mp3'),
+    new Audio('sounds/block_destruction2.mp3')
+];
+let hammerPoolIndex = 0;
+
 function playHammerSound() {
     if (typeof audioSettings !== 'undefined' && !audioSettings.se) return;
-    const soundIndex = Math.random() < 0.5 ? 1 : 2;
-    const audio = new Audio(`sounds/block_destruction${soundIndex}.mp3`);
-    audio.volume = 0.6;
-    audio.currentTime = 0;
-    audio.play().catch(e => console.log("Audio play blocked", e));
+    
+    const sound = hammerAudioPool[hammerPoolIndex];
+    hammerPoolIndex = (hammerPoolIndex + 1) % hammerAudioPool.length;
+
+    sound.volume = 0.6;
+    sound.currentTime = 0;
+    sound.play().catch(e => console.log("Audio play blocked", e));
 }
 
 function playBrushSound() {

@@ -75,14 +75,53 @@ function initExcavationGame() {
 
     setupGameCanvases();
 
+    // 既存のイベントをリセット
+    topCanvas.onmousedown = null;
+    topCanvas.onmousemove = null;
+    topCanvas.onmouseup = null;
+    topCanvas.onmouseleave = null;
+
+    // マウスイベント設定
     topCanvas.onmousedown = handleStart;
     topCanvas.onmousemove = handleMove;
     topCanvas.onmouseup = handleEnd;
     topCanvas.onmouseleave = handleEnd;
-    topCanvas.ontouchstart = event => { handleTouch(event, 'mousedown'); };
-    topCanvas.ontouchmove = event => { handleTouch(event, 'mousemove'); };
-    topCanvas.ontouchend = event => { event.preventDefault(); handleEnd(); };
-    topCanvas.ontouchcancel = event => { event.preventDefault(); handleEnd(); };
+
+    // タッチイベント設定（連打時のジェスチャー判定による遅延・不具合を防止）
+    const touchStartHandler = (event) => {
+        event.preventDefault();
+        const touch = event.touches[0];
+        if (touch) {
+            handleStart({ clientX: touch.clientX, clientY: touch.clientY });
+        }
+    };
+
+    const touchMoveHandler = (event) => {
+        event.preventDefault();
+        const touch = event.touches[0];
+        if (touch) {
+            handleMove({ clientX: touch.clientX, clientY: touch.clientY });
+        }
+    };
+
+    const touchEndHandler = (event) => {
+        event.preventDefault();
+        handleEnd();
+    };
+
+    topCanvas.removeEventListener('touchstart', topCanvas._ts);
+    topCanvas.removeEventListener('touchmove', topCanvas._tm);
+    topCanvas.removeEventListener('touchend', topCanvas._te);
+    topCanvas.removeEventListener('touchcancel', topCanvas._te);
+
+    topCanvas._ts = touchStartHandler;
+    topCanvas._tm = touchMoveHandler;
+    topCanvas._te = touchEndHandler;
+
+    topCanvas.addEventListener('touchstart', touchStartHandler, { passive: false });
+    topCanvas.addEventListener('touchmove', touchMoveHandler, { passive: false });
+    topCanvas.addEventListener('touchend', touchEndHandler, { passive: false });
+    topCanvas.addEventListener('touchcancel', touchEndHandler, { passive: false });
 
     if (excavationTimer) clearInterval(excavationTimer);
     startFragmentAnimationLoop();
@@ -151,6 +190,8 @@ function handleEnd() {
     isDrawing = false;
 }
 
+let lastHammerTime = 0;
+
 function scratch(event) {
     if (!fossilReady) return;
 
@@ -159,12 +200,16 @@ function scratch(event) {
     const hammerLevel = playerStats.toolLevels.hammer || 1;
 
     if (activeTool === 'hammer') {
+        const now = Date.now();
+        if (now - lastHammerTime < 70) return; // 連打時の処理過負荷を防止（70msガード）
+        lastHammerTime = now;
+
         const radius = 50 + hammerLevel * 10;
         playHammerSound();
         checkAreaDamageFossil(point.x, point.y, radius * 0.65);
         removeRockRandomShape(point.x, point.y, radius);
         spawnHammerFragments(point.x, point.y, radius);
-   } else if (activeTool === 'brush') {
+    } else if (activeTool === 'brush') {
         playBrushSound();
         removeRockIrregular(point.x, point.y, 22 + brushLevel * 4, Math.min(0.5, 0.28 + brushLevel * 0.06));
         createDustParticles(point.x, point.y);
