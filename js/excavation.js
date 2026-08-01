@@ -326,7 +326,7 @@ function damageFossil(x, y, radius) {
 }
 
 function calculateExcavationScore() {
-    if (!outlineMaskData || !targetMaskData || !targetBounds) return 0;
+    if (!outlineMaskData || !targetMaskData || !bufferMaskData || !targetBounds) return 0;
 
     const soilData = topCtx.getImageData(0, 0, topCanvas.width, topCanvas.height).data;
     const damageData = damageMaskCtx.getImageData(0, 0, damageMaskCanvas.width, damageMaskCanvas.height).data;
@@ -340,11 +340,15 @@ function calculateExcavationScore() {
     let outlineTotal = 0;
     let outlineCleared = 0;
 
+    let bufferTotal = 0;
+    let bufferCleared = 0;
+
     for (let y = 0; y < topCanvas.height; y += sampleStep) {
         for (let x = 0; x < topCanvas.width; x += sampleStep) {
             const offset = (y * topCanvas.width + x) * 4;
             const isTarget = targetMaskData[offset + 3] > 40;
             const isOutline = outlineMaskData[offset + 3] > 40;
+            const isBuffer = bufferMaskData[offset + 3] > 40;
             const isCleared = soilData[offset + 3] < 92;
 
             if (!isCleared) {
@@ -361,18 +365,26 @@ function calculateExcavationScore() {
                 outlineTotal++;
                 if (isCleared) outlineCleared++;
             }
+
+            if (isBuffer) {
+                bufferTotal++;
+                if (isCleared) bufferCleared++;
+            }
         }
     }
 
     const rockClearedRatio = Math.max(0, 1 - (currentRockPixelCount / initialRockPixelCount));
-    const rockRemovalScore = rockClearedRatio * 40;
-
     const surfaceRatio = targetTotal > 0 ? targetSurfaceCleared / targetTotal : 0;
-    const precisionRatio = outlineTotal > 0 ? outlineCleared / outlineTotal : 0;
+    const outlineRatio = outlineTotal > 0 ? outlineCleared / outlineTotal : 0;
+    const bufferRatio = bufferTotal > 0 ? bufferCleared / bufferTotal : 0;
 
+    // 配分: 全体岩削減 15点 / パーツ周辺バッファ 25点 / 輪郭露出 30点 / 表面露出 30点
+    const overallRockScore = rockClearedRatio * 15;
+    const bufferScore = bufferRatio * 25;
+    const outlineScore = outlineRatio * 30;
     const surfaceScore = surfaceRatio * 30;
-    const bonusScore = precisionRatio * 30;
-    const rawScore = rockRemovalScore + surfaceScore + bonusScore;
+
+    const rawScore = overallRockScore + bufferScore + outlineScore + surfaceScore;
 
     const damagePenalty = Math.max(0, 1 - (damagedCount / (targetTotal * 0.4)));
     

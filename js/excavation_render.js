@@ -12,11 +12,15 @@ function setupGameCanvases() {
     targetMaskCanvas.height = canvasHeight;
     targetMaskCtx = targetMaskCanvas.getContext('2d', { willReadFrequently: true });
 
-    outlineMaskCanvas = document.createElement('canvas');
+   outlineMaskCanvas = document.createElement('canvas');
     outlineMaskCanvas.width = canvasWidth;
     outlineMaskCanvas.height = canvasHeight;
     outlineMaskCtx = outlineMaskCanvas.getContext('2d', { willReadFrequently: true });
 
+    bufferMaskCanvas = document.createElement('canvas');
+    bufferMaskCanvas.width = canvasWidth;
+    bufferMaskCanvas.height = canvasHeight;
+    bufferMaskCtx = bufferMaskCanvas.getContext('2d', { willReadFrequently: true });
     fossilLayerCanvas = document.createElement('canvas');
     fossilLayerCanvas.width = canvasWidth;
     fossilLayerCanvas.height = canvasHeight;
@@ -49,8 +53,20 @@ function setupGameCanvases() {
         outlineMaskCtx.drawImage(image, drawX, drawY, drawWidth, drawHeight);
         outlineMaskCtx.restore();
 
+        // パーツの形に沿った広い周囲バッファ領域（幅140px）
+        bufferMaskCtx.save();
+        bufferMaskCtx.drawImage(image, drawX, drawY, drawWidth, drawHeight);
+        bufferMaskCtx.globalCompositeOperation = 'source-over';
+        bufferMaskCtx.lineWidth = 140;
+        bufferMaskCtx.strokeStyle = '#ffffff';
+        bufferMaskCtx.stroke();
+        bufferMaskCtx.globalCompositeOperation = 'destination-out';
+        bufferMaskCtx.drawImage(image, drawX, drawY, drawWidth, drawHeight);
+        bufferMaskCtx.restore();
+
         targetMaskData = targetMaskCtx.getImageData(0, 0, canvasWidth, canvasHeight).data;
         outlineMaskData = outlineMaskCtx.getImageData(0, 0, canvasWidth, canvasHeight).data;
+        bufferMaskData = bufferMaskCtx.getImageData(0, 0, canvasWidth, canvasHeight).data;
         targetBounds = calculateTargetBounds(drawX, drawY, drawWidth, drawHeight);
 
         drawUnderground();
