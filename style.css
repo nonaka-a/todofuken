@@ -435,7 +435,7 @@ header h1 {
     overflow: hidden;
 }
 
-/* カード背景画像（chiso.png）の半透明配置 */
+/* カード背景画像の半透明配置（画像指定はJSで個別切替） */
 .area-card::before {
     content: '';
     position: absolute;
@@ -443,7 +443,7 @@ header h1 {
     left: 0;
     width: 100%;
     height: 100%;
-    background-image: url('image/chiso.png');
+    background-image: var(--bg-chiso-img, url('image/chiso.png'));
     background-size: 60% auto;
     background-repeat: no-repeat;
     background-position: center;

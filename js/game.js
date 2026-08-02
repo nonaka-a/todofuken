@@ -379,9 +379,23 @@ function openAreaSelect() {
             ? REGION_DETAILS[regionName] 
             : { feature: '---', hint: '---' };
 
+        const chisoImageMap = {
+            'ホッカイドー': 'image/chiso_ho.png',
+            'トウホク':     'image/chiso_to.png',
+            'カントー':     'image/chiso_kant.png',
+            'チュウブ':     'image/chiso_chub.png',
+            'キンキ':       'image/chiso_kin.png',
+            'チュウゴク':   'image/chiso_chug.png',
+            'シコク':       'image/chiso_shi.png',
+            'キュウシュー': 'image/chiso_kyu.png'
+        };
+
+        const bgImgPath = chisoImageMap[regionName] || 'image/chiso.png';
+
         const card = document.createElement('div');
         card.className = 'area-card';
         card.dataset.index = idx;
+        card.style.setProperty('--bg-chiso-img', `url('${bgImgPath}')`);
         card.innerHTML = `
             <div>
                 <h4>${regionName}地層 <span style="font-size: 0.95rem; font-weight: normal; color: #6d3f1f;">(${foundCount}/${totalCount})</span></h4>
