@@ -942,3 +942,20 @@ header h1 {
     color: #e0b06b;
     font-weight: bold;
 }
+
+.area-card.locked-card {
+    filter: grayscale(0.6) brightness(0.8);
+}
+
+.locked-icon {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 120px;
+    height: 120px;
+    object-fit: contain;
+    z-index: 10;
+    pointer-events: none;
+    filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.6));
+}

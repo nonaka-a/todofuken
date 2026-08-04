@@ -8,7 +8,8 @@ let playerStats = {
         brush: 1
     },
     ownedHammers: ['normal'],
-    equippedHammer: 'normal'
+    equippedHammer: 'normal',
+    unlockedRegions: ['ホッカイドー', 'キュウシュー']
 };
 
 let audioSettings = {
@@ -93,6 +94,7 @@ async function initGame() {
     if (!playerStats.excavationImages) playerStats.excavationImages = {};
     if (!playerStats.ownedHammers) playerStats.ownedHammers = ['normal'];
     if (!playerStats.equippedHammer) playerStats.equippedHammer = 'normal';
+    if (!playerStats.unlockedRegions) playerStats.unlockedRegions = ['ホッカイドー', 'キュウシュー'];
 
     if (typeof PREFECTURE_DATA !== 'undefined') {
         PREFECTURE_DATA.forEach(p => {
@@ -318,15 +320,15 @@ function updateUI() {
 
     if (hammerBtn && hammerDesc) {
         if (hasGold) {
-            hammerDesc.innerText = "金のハンマー（最高性能）";
+            hammerDesc.innerText = "金のハンマー（広範囲＆化石が欠けない）";
             hammerBtn.innerText = "MAX";
             hammerBtn.disabled = true;
         } else if (hasSilver) {
-            hammerDesc.innerText = "金のハンマー（広範囲＆ノーダメージ）";
+            hammerDesc.innerText = "金のハンマー（広範囲＆化石が欠けない）";
             if (hammerCostElem) hammerCostElem.innerText = "2000";
             hammerBtn.disabled = false;
         } else {
-            hammerDesc.innerText = "銀のハンマー（広範囲破壊）";
+            hammerDesc.innerText = "銀のハンマー（広範囲を破壊する）";
             if (hammerCostElem) hammerCostElem.innerText = "1000";
             hammerBtn.disabled = false;
         }
@@ -359,6 +361,13 @@ window.closeShop = function() {
     if (modal) modal.style.display = 'none';
 };
 
+function playRegisterSound() {
+    if (typeof audioSettings !== 'undefined' && !audioSettings.se) return;
+    const audio = new Audio('sounds/Register.mp3');
+    audio.volume = 0.6;
+    audio.play().catch(e => console.log("Audio play blocked", e));
+}
+
 window.upgradeTool = function(tool) {
     if (tool === 'hammer') {
         const hasSilver = playerStats.ownedHammers.includes('silver');
@@ -373,6 +382,7 @@ window.upgradeTool = function(tool) {
             playerStats.gold -= cost;
             playerStats.ownedHammers.push(targetType);
             playerStats.equippedHammer = targetType;
+            playRegisterSound();
             saveGame();
             updateUI();
         } else {
@@ -386,11 +396,32 @@ window.upgradeTool = function(tool) {
         if (playerStats.gold >= cost) {
             playerStats.gold -= cost;
             playerStats.toolLevels.brush = level + 1;
+            playRegisterSound();
             saveGame();
             updateUI();
         } else {
             alert("お金が足りません！");
         }
+    }
+};
+
+window.unlockRegion = function(event, regionName) {
+    event.stopPropagation();
+    const cost = 500;
+    if (playerStats.gold >= cost) {
+        playerStats.gold -= cost;
+        if (!playerStats.unlockedRegions) {
+            playerStats.unlockedRegions = ['ホッカイドー', 'キュウシュー'];
+        }
+        if (!playerStats.unlockedRegions.includes(regionName)) {
+            playerStats.unlockedRegions.push(regionName);
+        }
+        playRegisterSound();
+        saveGame();
+        updateUI();
+        openAreaSelect();
+    } else {
+        alert("お金が足りません！");
     }
 };
 
@@ -464,18 +495,6 @@ window.openAreaSelect = function() {
         `).join('');
     }
 
-    let brushSelectArea = document.getElementById('modal-brush-select-area');
-    if (!brushSelectArea && modalWindow) {
-        brushSelectArea = document.createElement('div');
-        brushSelectArea.id = 'modal-brush-select-area';
-        modalWindow.appendChild(brushSelectArea);
-    }
-
-    if (brushSelectArea) {
-        const brushLevel = playerStats.toolLevels ? (playerStats.toolLevels.brush || 1) : 1;
-        brushSelectArea.innerHTML = `<span class="brush-label">ブラシ:</span><span class="btn" style="padding:4px 10px; font-size:0.8rem; background:#ffe3a1; color:#3b2110; font-weight:bold; cursor:default;">Lv.${brushLevel}</span>`;
-    }
-
     let brushArea = document.getElementById('modal-brush-select-area');
     if (!brushArea && modalWindow) {
         brushArea = document.createElement('div');
@@ -487,6 +506,7 @@ window.openAreaSelect = function() {
         const brushLevel = playerStats.toolLevels ? (playerStats.toolLevels.brush || 1) : 1;
         brushArea.innerHTML = `<span class="brush-label">ブラシ:</span><span class="btn" style="padding:4px 10px; font-size:0.8rem; background:#ffe3a1; color:#3b2110; font-weight:bold; cursor:default;">Lv.${brushLevel}</span>`;
     }
+
     const chisoImageMap = {
         'ホッカイドー': 'image/chiso_ho.png',
         'トウホク':     'image/chiso_to.png',
@@ -508,12 +528,21 @@ window.openAreaSelect = function() {
             : { feature: '---', hint: '---' };
 
         const bgImgPath = chisoImageMap[regionName] || 'image/chiso.png';
+        const isUnlocked = playerStats.unlockedRegions && playerStats.unlockedRegions.includes(regionName);
 
         const card = document.createElement('div');
-        card.className = 'area-card';
+        card.className = `area-card ${isUnlocked ? '' : 'locked-card'}`;
         card.dataset.index = idx;
         card.style.setProperty('--bg-chiso-img', `url('${bgImgPath}')`);
+
+        const actionBtnHtml = isUnlocked
+            ? `<button class="btn btn-accent btn-start-excavate" onclick="onCardClick(event, ${idx}, '${regionName}')">この場所を発掘する</button>`
+            : `<button class="btn btn-accent btn-start-excavate" ${playerStats.gold < 500 ? 'disabled' : ''} onclick="unlockRegion(event, '${regionName}')">解放する (500 G)</button>`;
+
+        const lockImgHtml = isUnlocked ? '' : `<img src="image/lock.png" class="locked-icon" alt="ロック">`;
+
         card.innerHTML = `
+            ${lockImgHtml}
             <div>
                 <h4>${regionName}地層 <span style="font-size: 0.95rem; font-weight: normal; color: #6d3f1f;">(${foundCount}/${totalCount})</span></h4>
                 <div class="area-info-item">
@@ -527,7 +556,7 @@ window.openAreaSelect = function() {
                 <div style="display: flex; gap: 8px; align-items: center; margin-top: 8px;">
                     <button type="button" class="btn-area-hint" onclick="toggleAreaHint(event, '${regionName}')">発掘のヒント</button>
                 </div>
-                <button class="btn btn-accent btn-start-excavate" onclick="onCardClick(event, ${idx}, '${regionName}')">この場所を発掘する</button>
+                ${actionBtnHtml}
             </div>
         `;
         track.appendChild(card);

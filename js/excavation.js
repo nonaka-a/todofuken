@@ -235,9 +235,9 @@ function scratch(event) {
             // 硬淡混在（ランダムサイズ 0.5〜1.8倍：約25px〜90px）
             radius *= (0.5 + Math.random() * 1.3);
         } else if (region === 'チュウゴク' || region === 'シコク') {
-            // 横長ひび割れ（X方向拡大・Y方向縮小）
-            scaleX = 1.6 + (Math.random() - 0.5) * 0.3;
-            scaleY = 0.7 + (Math.random() - 0.5) * 0.2;
+            // 横長ひび割れ（X方向をさらに拡大・Y方向をさらに縮小）
+            scaleX = 2.4 + (Math.random() - 0.5) * 0.4;
+            scaleY = 0.5 + (Math.random() - 0.5) * 0.1;
         }
 
         playHammerSound();
@@ -560,6 +560,14 @@ function finishExcavation() {
 
     playerStats.gold += reward;
     saveGame();
+
+    if (isFirstTime && score > 0) {
+        if (typeof audioSettings === 'undefined' || audioSettings.se) {
+            const applauseAudio = new Audio('sounds/Applause.mp3');
+            applauseAudio.volume = 0.6;
+            applauseAudio.play().catch(e => console.log("Audio play blocked", e));
+        }
+    }
 
     document.getElementById('result-first-tag').style.display = isFirstTime ? 'block' : 'none';
     document.getElementById('result-fossil-img').src = resultImgData;
