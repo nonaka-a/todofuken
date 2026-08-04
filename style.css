@@ -926,3 +926,19 @@ header h1 {
     color: #e0b06b;
     font-weight: bold;
 }
+
+#modal-brush-select-area {
+    position: absolute;
+    right: 30px;
+    bottom: 25px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    z-index: 10;
+}
+
+#modal-brush-select-area .brush-label {
+    font-size: 0.85rem;
+    color: #e0b06b;
+    font-weight: bold;
+}

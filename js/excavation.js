@@ -220,13 +220,33 @@ function scratch(event) {
             radius = 70; 
         }
 
+        // 地層ごとの特徴による半径・形状の補正計算
+        const region = activePrefecture ? activePrefecture.region : '';
+        let scaleX = 1.0;
+        let scaleY = 1.0;
+
+        if (region === 'トウホク' || region === 'カントー') {
+            // 柔らかい（大破壊・欠けやすい）
+            radius *= 1.8;
+        } else if (region === 'チュウブ') {
+            // 硬い（小破壊）
+            radius *= 0.7;
+        } else if (region === 'キンキ' || region === 'キュウシュー') {
+            // 硬淡混在（ランダムサイズ 0.5〜1.8倍：約25px〜90px）
+            radius *= (0.5 + Math.random() * 1.3);
+        } else if (region === 'チュウゴク' || region === 'シコク') {
+            // 横長ひび割れ（X方向拡大・Y方向縮小）
+            scaleX = 1.6 + (Math.random() - 0.5) * 0.3;
+            scaleY = 0.7 + (Math.random() - 0.5) * 0.2;
+        }
+
         playHammerSound();
 
         if (hammerType !== 'gold') {
             checkAreaDamageFossil(point.x, point.y, radius * 0.65);
         }
 
-        removeRockRandomShape(point.x, point.y, radius);
+        removeRockRandomShape(point.x, point.y, radius, scaleX, scaleY);
         spawnHammerFragments(point.x, point.y, radius);
     } else if (activeTool === 'brush') {
         playBrushSound();
@@ -298,7 +318,7 @@ function cleanupTopAlpha(x, y, radius) {
     topCtx.putImageData(imgData, startX, startY);
 }
 
-function removeRockRandomShape(centerX, centerY, baseRadius) {
+function removeRockRandomShape(centerX, centerY, baseRadius, scaleX = 1.0, scaleY = 1.0) {
     topCtx.save();
     topCtx.globalCompositeOperation = 'destination-out';
     topCtx.globalAlpha = 1.0; 
@@ -311,8 +331,8 @@ function removeRockRandomShape(centerX, centerY, baseRadius) {
         const angle = startAngle + (Math.PI * 2 * i) / pointsCount + (Math.random() - 0.5) * 0.3;
         const randomFactor = 0.4 + Math.random() * 0.8;
         const r = baseRadius * randomFactor;
-        const px = centerX + Math.cos(angle) * r;
-        const py = centerY + Math.sin(angle) * r;
+        const px = centerX + Math.cos(angle) * r * scaleX;
+        const py = centerY + Math.sin(angle) * r * scaleY;
         if (i === 0) topCtx.moveTo(px, py);
         else topCtx.lineTo(px, py);
     }
@@ -320,7 +340,8 @@ function removeRockRandomShape(centerX, centerY, baseRadius) {
     topCtx.fill();
     topCtx.restore();
 
-    cleanupTopAlpha(centerX, centerY, baseRadius * 1.3);
+    const maxScale = Math.max(scaleX, scaleY);
+    cleanupTopAlpha(centerX, centerY, baseRadius * 1.3 * maxScale);
 }
 
 function removeRockIrregular(centerX, centerY, baseRadius, opacity) {

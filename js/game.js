@@ -464,6 +464,29 @@ window.openAreaSelect = function() {
         `).join('');
     }
 
+    let brushSelectArea = document.getElementById('modal-brush-select-area');
+    if (!brushSelectArea && modalWindow) {
+        brushSelectArea = document.createElement('div');
+        brushSelectArea.id = 'modal-brush-select-area';
+        modalWindow.appendChild(brushSelectArea);
+    }
+
+    if (brushSelectArea) {
+        const brushLevel = playerStats.toolLevels ? (playerStats.toolLevels.brush || 1) : 1;
+        brushSelectArea.innerHTML = `<span class="brush-label">ブラシ:</span><span class="btn" style="padding:4px 10px; font-size:0.8rem; background:#ffe3a1; color:#3b2110; font-weight:bold; cursor:default;">Lv.${brushLevel}</span>`;
+    }
+
+    let brushArea = document.getElementById('modal-brush-select-area');
+    if (!brushArea && modalWindow) {
+        brushArea = document.createElement('div');
+        brushArea.id = 'modal-brush-select-area';
+        modalWindow.appendChild(brushArea);
+    }
+
+    if (brushArea) {
+        const brushLevel = playerStats.toolLevels ? (playerStats.toolLevels.brush || 1) : 1;
+        brushArea.innerHTML = `<span class="brush-label">ブラシ:</span><span class="btn" style="padding:4px 10px; font-size:0.8rem; background:#ffe3a1; color:#3b2110; font-weight:bold; cursor:default;">Lv.${brushLevel}</span>`;
+    }
     const chisoImageMap = {
         'ホッカイドー': 'image/chiso_ho.png',
         'トウホク':     'image/chiso_to.png',
