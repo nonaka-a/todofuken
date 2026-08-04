@@ -59,22 +59,22 @@
                     <button class="btn-close" onclick="closeShop()">とじる</button>
                 </div>
                 <div class="shop-list">
-                    <div class="shop-item">
+                   <div class="shop-item">
                         <div class="shop-item-info">
                             <strong>ハンマー</strong><br>
-                            <span class="sub-text">はかい力 (現在 Lv.<span id="hammer-level">1</span>)</span>
+                            <span class="sub-text" id="hammer-desc">普通のハンマー（所持）</span>
                         </div>
-                        <button class="btn btn-accent" onclick="upgradeTool('hammer')">
-                            <span id="hammer-cost">120</span> G
+                        <button id="btn-hammer-upgrade" class="btn btn-accent" onclick="upgradeTool('hammer')">
+                            <span id="hammer-cost">1000</span> G
                         </button>
                     </div>
                     <div class="shop-item">
                         <div class="shop-item-info">
                             <strong>ブラシ</strong><br>
-                            <span class="sub-text">けずる広さ (現在 Lv.<span id="brush-level">1</span>)</span>
+                            <span class="sub-text">(現在 Lv.<span id="brush-level">1</span>)</span>
                         </div>
-                        <button class="btn btn-accent" onclick="upgradeTool('brush')">
-                            <span id="brush-cost">100</span> G
+                        <button id="btn-brush-upgrade" class="btn btn-accent" onclick="upgradeTool('brush')">
+                            <span id="brush-cost">1000</span> G
                         </button>
                     </div>
                 </div>

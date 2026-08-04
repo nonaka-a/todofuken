@@ -164,6 +164,10 @@ function startExcavationTimer() {
     excavationTimer = setInterval(() => {
         secondsLeft--;
         document.getElementById('timer-sec').innerText = secondsLeft;
+        
+        excavationScore = calculateExcavationScore();
+        updateScoreDisplay();
+
         if (secondsLeft <= 0) finishExcavation();
     }, 1000);
 }
@@ -188,6 +192,11 @@ function handleMove(event) {
 
 function handleEnd() {
     isDrawing = false;
+    
+    if (fossilReady) {
+        excavationScore = calculateExcavationScore();
+        updateScoreDisplay();
+    }
 }
 
 let lastHammerTime = 0;
@@ -201,22 +210,41 @@ function scratch(event) {
 
     if (activeTool === 'hammer') {
         const now = Date.now();
-        if (now - lastHammerTime < 70) return; // 連打時の処理過負荷を防止（70msガード）
+        if (now - lastHammerTime < 70) return;
         lastHammerTime = now;
 
-        const radius = 50 + hammerLevel * 10;
+        const hammerType = playerStats.equippedHammer || 'normal';
+        let radius = 50; 
+
+        if (hammerType === 'silver' || hammerType === 'gold') {
+            radius = 70; 
+        }
+
         playHammerSound();
-        checkAreaDamageFossil(point.x, point.y, radius * 0.65);
+
+        if (hammerType !== 'gold') {
+            checkAreaDamageFossil(point.x, point.y, radius * 0.65);
+        }
+
         removeRockRandomShape(point.x, point.y, radius);
         spawnHammerFragments(point.x, point.y, radius);
     } else if (activeTool === 'brush') {
         playBrushSound();
-        removeRockIrregular(point.x, point.y, 22 + brushLevel * 4, Math.min(0.5, 0.28 + brushLevel * 0.06));
+        
+        let radius = 16;
+        let opacity = 0.15; 
+
+        if (brushLevel === 2) {
+            radius = 26;   
+            opacity = 0.34;
+        } else if (brushLevel >= 3) {
+            radius = 36;   
+            opacity = 0.50;
+        }
+
+        removeRockIrregular(point.x, point.y, radius, opacity);
         createDustParticles(point.x, point.y);
     }
-
-    excavationScore = calculateExcavationScore();
-    updateScoreDisplay();
 }
 
 function checkAreaDamageFossil(centerX, centerY, checkRadius) {

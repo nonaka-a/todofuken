@@ -1,9 +1,9 @@
 let lastBrushSoundTime = 0;
 
-const hammerAudioPool = [
-    new Audio('sounds/block_destruction1.mp3'),
-    new Audio('sounds/block_destruction2.mp3')
-];
+const hammerAudioPool = [];
+for (let i = 0; i < 8; i++) {
+    hammerAudioPool.push(new Audio(`sounds/block_destruction${(i % 2) + 1}.mp3`));
+}
 let hammerPoolIndex = 0;
 
 function playHammerSound() {

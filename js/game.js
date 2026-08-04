@@ -6,7 +6,9 @@ let playerStats = {
     toolLevels: {
         hammer: 1,
         brush: 1
-    }
+    },
+    ownedHammers: ['normal'],
+    equippedHammer: 'normal'
 };
 
 let audioSettings = {
@@ -25,7 +27,6 @@ window.addEventListener('DOMContentLoaded', () => {
     initScale();
     window.addEventListener('resize', initScale);
     
-    // iPadなどのダブルタップによるズーム動作を防止
     document.addEventListener('touchend', (event) => {
         const now = Date.now();
         if (now - lastTouchEnd <= 300) {
@@ -34,8 +35,10 @@ window.addEventListener('DOMContentLoaded', () => {
         lastTouchEnd = now;
     }, false);
 
-    document.getElementById('btn-shop').disabled = true;
-    document.getElementById('btn-excavate').disabled = true;
+    const btnShop = document.getElementById('btn-shop');
+    const btnExcavate = document.getElementById('btn-excavate');
+    if (btnShop) btnShop.disabled = false;
+    if (btnExcavate) btnExcavate.disabled = false;
 
     initBGM();
     initGame();
@@ -65,6 +68,7 @@ function initBGM() {
 
 function initScale() {
     const stage = document.getElementById('game-stage');
+    if (!stage) return;
     const windowWidth = window.innerWidth;
     const windowHeight = window.innerHeight;
     
@@ -87,21 +91,22 @@ async function initGame() {
 
     if (!playerStats.excavationCounts) playerStats.excavationCounts = {};
     if (!playerStats.excavationImages) playerStats.excavationImages = {};
+    if (!playerStats.ownedHammers) playerStats.ownedHammers = ['normal'];
+    if (!playerStats.equippedHammer) playerStats.equippedHammer = 'normal';
 
-    PREFECTURE_DATA.forEach(p => {
-        if (playerStats.excavationRates[p.id] === undefined) {
-            playerStats.excavationRates[p.id] = 0;
-        }
-        if (playerStats.excavationCounts[p.id] === undefined) {
-            playerStats.excavationCounts[p.id] = 0;
-        }
-    });
+    if (typeof PREFECTURE_DATA !== 'undefined') {
+        PREFECTURE_DATA.forEach(p => {
+            if (playerStats.excavationRates[p.id] === undefined) {
+                playerStats.excavationRates[p.id] = 0;
+            }
+            if (playerStats.excavationCounts[p.id] === undefined) {
+                playerStats.excavationCounts[p.id] = 0;
+            }
+        });
+    }
 
     renderJapanMap();
     updateUI();
-
-    document.getElementById('btn-shop').disabled = false;
-    document.getElementById('btn-excavate').disabled = false;
 }
 
 function saveGame() {
@@ -123,15 +128,16 @@ function saveGame() {
     }
 }
 
-function resetSaveData() {
+window.resetSaveData = function() {
     if (confirm("本当にセーブデータを消去して最初からやり直しますか？\n（この操作は取り消せません）")) {
         localStorage.removeItem('japan_museum_save');
         location.reload();
     }
-}
+};
 
 function renderJapanMap() {
     const container = document.getElementById('japan-map-container');
+    if (!container) return;
     container.innerHTML = '';
 
     const positions = (typeof PREFECTURE_POSITIONS !== 'undefined') ? PREFECTURE_POSITIONS : {};
@@ -159,80 +165,78 @@ function renderJapanMap() {
         const offsetX = (containerWidth - drawWidth) / 2;
         const offsetY = (containerHeight - drawHeight) / 2;
 
-        PREFECTURE_DATA.forEach(p => {
-            if (typeof currentPlacementPrefId !== 'undefined' && p.id === currentPlacementPrefId) return;
+        if (typeof PREFECTURE_DATA !== 'undefined') {
+            PREFECTURE_DATA.forEach(p => {
+                if (typeof currentPlacementPrefId !== 'undefined' && p.id === currentPlacementPrefId) return;
 
-            const pos = positions[p.id];
-            if (!pos) return;
+                const pos = positions[p.id];
+                if (!pos) return;
 
-            const rate = playerStats.excavationRates[p.id] || 0;
+                const rate = playerStats.excavationRates[p.id] || 0;
 
-            if (rate === 0) return;
-            
-            const img = document.createElement('img');
-            img.src = `image/parts/${p.id}.png`;
-            img.id = `map-part-${p.id}`;
-            
-            img.style.position = 'absolute';
-            img.style.left = `${offsetX + pos.x * scale}px`;
-            img.style.top = `${offsetY + pos.y * scale}px`;
-            img.style.width = `${pos.w * scale}px`;
-            img.style.height = `${pos.h * scale}px`;
-            img.style.cursor = 'pointer';
-            img.style.transition = 'transform 0.2s, filter 0.2s';
-            
-            img.ondragstart = () => false;
+                if (rate === 0) return;
+                
+                const img = document.createElement('img');
+                img.src = `image/parts/${p.id}.png`;
+                img.id = `map-part-${p.id}`;
+                
+                img.style.position = 'absolute';
+                img.style.left = `${offsetX + pos.x * scale}px`;
+                img.style.top = `${offsetY + pos.y * scale}px`;
+                img.style.width = `${pos.w * scale}px`;
+                img.style.height = `${pos.h * scale}px`;
+                img.style.cursor = 'pointer';
+                img.style.transition = 'transform 0.2s, filter 0.2s';
+                
+                img.ondragstart = () => false;
 
-            img.style.filter = 'none';
-            if (rate < 80) {
-                img.style.zIndex = '10';
-            } else {
-                img.style.zIndex = '15';
-            }
+                img.style.filter = 'none';
+                img.style.zIndex = rate >= 80 ? '15' : '10';
 
-            img.onmouseover = () => { 
-                img.style.transform = 'scale(1.05)'; 
-                img.style.zIndex = '20'; 
-            };
-            img.onmouseout = () => { 
-                img.style.transform = 'scale(1)'; 
-                img.style.zIndex = rate >= 80 ? '15' : (rate > 0 ? '10' : '5');
-            };
+                img.onmouseover = () => { 
+                    img.style.transform = 'scale(1.05)'; 
+                    img.style.zIndex = '20'; 
+                };
+                img.onmouseout = () => { 
+                    img.style.transform = 'scale(1)'; 
+                    img.style.zIndex = rate >= 80 ? '15' : (rate > 0 ? '10' : '5');
+                };
 
-            let imgCanvas = null;
-            let imgCtx = null;
+                let imgCanvas = null;
+                let imgCtx = null;
 
-            img.onclick = (e) => {
-                if (!imgCanvas) {
-                    imgCanvas = document.createElement('canvas');
-                    imgCanvas.width = img.naturalWidth;
-                    imgCanvas.height = img.naturalHeight;
-                    imgCtx = imgCanvas.getContext('2d');
-                    imgCtx.drawImage(img, 0, 0);
-                }
-
-                const rect = img.getBoundingClientRect();
-                const clickX = Math.floor((e.clientX - rect.left) * (img.naturalWidth / rect.width));
-                const clickY = Math.floor((e.clientY - rect.top) * (img.naturalHeight / rect.height));
-
-                if (clickX >= 0 && clickX < img.naturalWidth && clickY >= 0 && clickY < img.naturalHeight) {
-                    const alpha = imgCtx.getImageData(clickX, clickY, 1, 1).data[3];
-                    if (alpha <= 30) {
-                        img.style.pointerEvents = 'none';
-                        const underlyingElement = document.elementFromPoint(e.clientX, e.clientY);
-                        img.style.pointerEvents = 'auto';
-
-                        if (underlyingElement && underlyingElement.onclick && underlyingElement !== img) {
-                            underlyingElement.onclick(e);
-                        }
-                        return;
+                img.onclick = (e) => {
+                    if (!imgCanvas) {
+                        imgCanvas = document.createElement('canvas');
+                        imgCanvas.width = img.naturalWidth;
+                        imgCanvas.height = img.naturalHeight;
+                        imgCtx = imgCanvas.getContext('2d');
+                        imgCtx.drawImage(img, 0, 0);
                     }
-                }
-                openEncyclopedia(p.id);
-            };
-            
-            container.appendChild(img);
-        });
+
+                    const rect = img.getBoundingClientRect();
+                    const clickX = Math.floor((e.clientX - rect.left) * (img.naturalWidth / rect.width));
+                    const clickY = Math.floor((e.clientY - rect.top) * (img.naturalHeight / rect.height));
+
+                    if (clickX >= 0 && clickX < img.naturalWidth && clickY >= 0 && clickY < img.naturalHeight) {
+                        const alpha = imgCtx.getImageData(clickX, clickY, 1, 1).data[3];
+                        if (alpha <= 30) {
+                            img.style.pointerEvents = 'none';
+                            const underlyingElement = document.elementFromPoint(e.clientX, e.clientY);
+                            img.style.pointerEvents = 'auto';
+
+                            if (underlyingElement && underlyingElement.onclick && underlyingElement !== img) {
+                                underlyingElement.onclick(e);
+                            }
+                            return;
+                        }
+                    }
+                    openEncyclopedia(p.id);
+                };
+                
+                container.appendChild(img);
+            });
+        }
     };
 
     if (baseMap.complete) {
@@ -248,10 +252,11 @@ function updateVisitors() {
 
     const museumScreen = document.getElementById('museum-screen');
     if (!museumScreen || !museumScreen.classList.contains('active')) {
-        container.style.display = 'none !important';
-        container.setAttribute('style', 'display: none !important;');
+        container.style.display = 'none';
         return;
     }
+
+    if (typeof PREFECTURE_DATA === 'undefined') return;
 
     const count = PREFECTURE_DATA.filter(p => (playerStats.excavationRates[p.id] || 0) > 0).length;
     const totalPrefectures = PREFECTURE_DATA.length;
@@ -282,49 +287,121 @@ function updateVisitors() {
 }
 
 function updateUI() {
-    document.getElementById('player-gold').innerText = playerStats.gold;
+    const goldElem = document.getElementById('player-gold');
+    if (goldElem) goldElem.innerText = playerStats.gold;
 
-    let sum = 0;
-    let count = 0;
-    PREFECTURE_DATA.forEach(p => {
-        const rate = playerStats.excavationRates[p.id] || 0;
-        sum += rate;
-        if (rate > 0) count++;
-    });
-    const avg = Math.round(sum / PREFECTURE_DATA.length);
-    document.getElementById('total-completion').innerText = avg;
-    document.getElementById('total-count').innerText = count;
+    if (typeof PREFECTURE_DATA !== 'undefined') {
+        let sum = 0;
+        let count = 0;
+        PREFECTURE_DATA.forEach(p => {
+            const rate = playerStats.excavationRates[p.id] || 0;
+            sum += rate;
+            if (rate > 0) count++;
+        });
+        const avg = Math.round(sum / PREFECTURE_DATA.length);
+        const compElem = document.getElementById('total-completion');
+        const countElem = document.getElementById('total-count');
+        if (compElem) compElem.innerText = avg;
+        if (countElem) countElem.innerText = count;
+    }
 
-    if (!playerStats.toolLevels.hammer) playerStats.toolLevels.hammer = 1;
+    if (!playerStats.toolLevels.brush) playerStats.toolLevels.brush = 1;
+    if (!playerStats.ownedHammers) playerStats.ownedHammers = ['normal'];
+    if (!playerStats.equippedHammer) playerStats.equippedHammer = 'normal';
 
-    document.getElementById('hammer-level').innerText = playerStats.toolLevels.hammer;
-    document.getElementById('hammer-cost').innerText = playerStats.toolLevels.hammer * 120;
-    document.getElementById('brush-level').innerText = playerStats.toolLevels.brush;
-    document.getElementById('brush-cost').innerText = playerStats.toolLevels.brush * 100;
-}
+    const hammerBtn = document.getElementById('btn-hammer-upgrade');
+    const hammerDesc = document.getElementById('hammer-desc');
+    const hammerCostElem = document.getElementById('hammer-cost');
 
-function openShop() {
-    document.getElementById('shop-modal').style.display = 'flex';
-}
+    const hasSilver = playerStats.ownedHammers.includes('silver');
+    const hasGold = playerStats.ownedHammers.includes('gold');
 
-function closeShop() {
-    document.getElementById('shop-modal').style.display = 'none';
-}
-
-function upgradeTool(tool) {
-    const level = playerStats.toolLevels[tool] || 1;
-    let cost = level * 100;
-    if (tool === 'hammer') cost = level * 120;
-
-    if (playerStats.gold >= cost) {
-        playerStats.gold -= cost;
-        playerStats.toolLevels[tool] = level + 1;
-        saveGame();
-        updateUI();
-    } else {
-        alert("お金が足りません！");
+    if (hammerBtn && hammerDesc) {
+        if (hasGold) {
+            hammerDesc.innerText = "金のハンマー（最高性能）";
+            hammerBtn.innerText = "MAX";
+            hammerBtn.disabled = true;
+        } else if (hasSilver) {
+            hammerDesc.innerText = "金のハンマー（広範囲＆ノーダメージ）";
+            if (hammerCostElem) hammerCostElem.innerText = "2000";
+            hammerBtn.disabled = false;
+        } else {
+            hammerDesc.innerText = "銀のハンマー（広範囲破壊）";
+            if (hammerCostElem) hammerCostElem.innerText = "1000";
+            hammerBtn.disabled = false;
+        }
+    }
+    
+    const brushLevel = playerStats.toolLevels.brush;
+    const brushLevelElem = document.getElementById('brush-level');
+    if (brushLevelElem) brushLevelElem.innerText = brushLevel;
+    const brushBtn = document.getElementById('btn-brush-upgrade');
+    if (brushBtn) {
+        if (brushLevel >= 3) {
+            brushBtn.innerText = "MAX";
+            brushBtn.disabled = true;
+        } else {
+            const cost = brushLevel === 1 ? 1000 : 2000;
+            const brushCostElem = document.getElementById('brush-cost');
+            if (brushCostElem) brushCostElem.innerText = cost;
+            brushBtn.disabled = false;
+        }
     }
 }
+
+window.openShop = function() {
+    const modal = document.getElementById('shop-modal');
+    if (modal) modal.style.display = 'flex';
+};
+
+window.closeShop = function() {
+    const modal = document.getElementById('shop-modal');
+    if (modal) modal.style.display = 'none';
+};
+
+window.upgradeTool = function(tool) {
+    if (tool === 'hammer') {
+        const hasSilver = playerStats.ownedHammers.includes('silver');
+        const hasGold = playerStats.ownedHammers.includes('gold');
+
+        if (hasGold) return;
+
+        const cost = hasSilver ? 2000 : 1000;
+        const targetType = hasSilver ? 'gold' : 'silver';
+
+        if (playerStats.gold >= cost) {
+            playerStats.gold -= cost;
+            playerStats.ownedHammers.push(targetType);
+            playerStats.equippedHammer = targetType;
+            saveGame();
+            updateUI();
+        } else {
+            alert("お金が足りません！");
+        }
+    } else if (tool === 'brush') {
+        const level = playerStats.toolLevels.brush || 1;
+        if (level >= 3) return;
+        const cost = level === 1 ? 1000 : 2000;
+
+        if (playerStats.gold >= cost) {
+            playerStats.gold -= cost;
+            playerStats.toolLevels.brush = level + 1;
+            saveGame();
+            updateUI();
+        } else {
+            alert("お金が足りません！");
+        }
+    }
+};
+
+window.selectEquippedHammer = function(type) {
+    if (playerStats.ownedHammers.includes(type)) {
+        playerStats.equippedHammer = type;
+        saveGame();
+        updateUI();
+        openAreaSelect();
+    }
+};
 
 function toggleAreaHint(event, regionName) {
     event.stopPropagation();
@@ -341,7 +418,7 @@ function toggleAreaHint(event, regionName) {
     }
 }
 
-function openAreaSelect() {
+window.openAreaSelect = function() {
     const defaultOrder = [
         "キュウシュー",
         "シコク",
@@ -353,10 +430,12 @@ function openAreaSelect() {
         "ホッカイドー"
     ];
     
+    if (typeof PREFECTURE_DATA === 'undefined') return;
+
     const existingRegions = [...new Set(PREFECTURE_DATA.map(p => p.region))];
     carouselRegions = defaultOrder.filter(r => existingRegions.includes(r));
 
-    if (playerStats.lastRegion) {
+   if (playerStats.lastRegion) {
         const lastIdx = carouselRegions.indexOf(playerStats.lastRegion);
         carouselIndex = lastIdx !== -1 ? lastIdx : 0;
     } else {
@@ -370,6 +449,32 @@ function openAreaSelect() {
     track.innerHTML = '';
     dotsContainer.innerHTML = '';
 
+    const modalWindow = document.querySelector('.area-select-window');
+    let hammerSelectArea = document.getElementById('modal-hammer-select-area');
+    if (!hammerSelectArea && modalWindow) {
+        hammerSelectArea = document.createElement('div');
+        hammerSelectArea.id = 'modal-hammer-select-area';
+        modalWindow.appendChild(hammerSelectArea);
+    }
+
+    if (hammerSelectArea) {
+        const hammerNames = { normal: '普通', silver: '銀', gold: '金' };
+        hammerSelectArea.innerHTML = `<span class="hammer-label">ハンマー:</span>` + playerStats.ownedHammers.map(h => `
+            <button class="btn" style="padding:4px 10px; font-size:0.8rem; ${playerStats.equippedHammer === h ? 'background:#ffe3a1; color:#3b2110; font-weight:bold;' : 'opacity:0.7;'}" onclick="selectEquippedHammer('${h}')">${hammerNames[h]}</button>
+        `).join('');
+    }
+
+    const chisoImageMap = {
+        'ホッカイドー': 'image/chiso_ho.png',
+        'トウホク':     'image/chiso_to.png',
+        'カントー':     'image/chiso_kant.png',
+        'チュウブ':     'image/chiso_chub.png',
+        'キンキ':       'image/chiso_kin.png',
+        'チュウゴク':   'image/chiso_chug.png',
+        'シコク':       'image/chiso_shi.png',
+        'キュウシュー': 'image/chiso_kyu.png'
+    };
+
     carouselRegions.forEach((regionName, idx) => {
         const regionPrefs = PREFECTURE_DATA.filter(p => p.region === regionName);
         const totalCount = regionPrefs.length;
@@ -378,17 +483,6 @@ function openAreaSelect() {
         const details = (typeof REGION_DETAILS !== 'undefined' && REGION_DETAILS[regionName]) 
             ? REGION_DETAILS[regionName] 
             : { feature: '---', hint: '---' };
-
-        const chisoImageMap = {
-            'ホッカイドー': 'image/chiso_ho.png',
-            'トウホク':     'image/chiso_to.png',
-            'カントー':     'image/chiso_kant.png',
-            'チュウブ':     'image/chiso_chub.png',
-            'キンキ':       'image/chiso_kin.png',
-            'チュウゴク':   'image/chiso_chug.png',
-            'シコク':       'image/chiso_shi.png',
-            'キュウシュー': 'image/chiso_kyu.png'
-        };
 
         const bgImgPath = chisoImageMap[regionName] || 'image/chiso.png';
 
@@ -424,8 +518,9 @@ function openAreaSelect() {
     setupCarouselDrag();
     updateCarousel();
 
-    document.getElementById('area-select-modal').style.display = 'flex';
-}
+    const areaModal = document.getElementById('area-select-modal');
+    if (areaModal) areaModal.style.display = 'flex';
+};
 
 function updateCarousel() {
     const cards = document.querySelectorAll('.area-card');
@@ -469,25 +564,27 @@ function updateCarousel() {
     });
 }
 
-function moveCarousel(dir) {
+window.moveCarousel = function(dir) {
     if (carouselRegions.length === 0) return;
     carouselIndex = (carouselIndex + dir + carouselRegions.length) % carouselRegions.length;
     updateCarousel();
-}
+};
 
-function setCarouselIndex(idx) {
+window.setCarouselIndex = function(idx) {
     carouselIndex = idx;
     updateCarousel();
-}
+};
 
-function onCardClick(event, idx, regionName) {
+window.onCardClick = function(event, idx, regionName) {
     event.stopPropagation();
     if (idx !== carouselIndex) {
         setCarouselIndex(idx);
     } else {
-        startAreaExcavation(regionName);
+        if (typeof startAreaExcavation === 'function') {
+            startAreaExcavation(regionName);
+        }
     }
-}
+};
 
 function setupCarouselDrag() {
     const wrapper = document.getElementById('carousel-wrapper');
@@ -518,33 +615,46 @@ function setupCarouselDrag() {
     wrapper.ontouchend = handleEnd;
 }
 
-function closeAreaSelect() {
-    document.getElementById('area-select-modal').style.display = 'none';
-}
+window.closeAreaSelect = function() {
+    const modal = document.getElementById('area-select-modal');
+    if (modal) modal.style.display = 'none';
+};
 
-function openEncyclopedia(prefId) {
+window.openEncyclopedia = function(prefId) {
+    if (typeof PREFECTURE_DATA === 'undefined') return;
     const pref = PREFECTURE_DATA.find(p => p.id === prefId);
     if (!pref) return;
 
     const rate = playerStats.excavationRates[pref.id] || 0;
     const count = playerStats.excavationCounts[pref.id] || 0;
 
-    document.getElementById('modal-pref-name').innerText = pref.name;
-    document.getElementById('modal-pref-kana').innerText = pref.kana ? `【${pref.kana}】` : '';
-    document.getElementById('modal-capital').innerText = pref.capital;
-    document.getElementById('modal-region').innerText = `${pref.region}地層`;
-    document.getElementById('modal-completion-rate').innerText = `${rate}%`;
-    document.getElementById('modal-excavation-count').innerText = `${count}回`;
-    document.getElementById('modal-specialty').innerText = pref.specialty;
-    document.getElementById('modal-landmark').innerText = pref.landmark;
+    const nameElem = document.getElementById('modal-pref-name');
+    const kanaElem = document.getElementById('modal-pref-kana');
+    const capElem = document.getElementById('modal-capital');
+    const regElem = document.getElementById('modal-region');
+    const compElem = document.getElementById('modal-completion-rate');
+    const countElem = document.getElementById('modal-excavation-count');
+    const specElem = document.getElementById('modal-specialty');
+    const markElem = document.getElementById('modal-landmark');
+
+    if (nameElem) nameElem.innerText = pref.name;
+    if (kanaElem) kanaElem.innerText = pref.kana ? `【${pref.kana}】` : '';
+    if (capElem) capElem.innerText = pref.capital;
+    if (regElem) regElem.innerText = `${pref.region}地層`;
+    if (compElem) compElem.innerText = `${rate}%`;
+    if (countElem) countElem.innerText = `${count}回`;
+    if (specElem) specElem.innerText = pref.specialty;
+    if (markElem) markElem.innerText = pref.landmark;
 
     drawEncyclopediaCanvas(pref, rate);
 
-    document.getElementById('encyclopedia-modal').style.display = 'flex';
-}
+    const modal = document.getElementById('encyclopedia-modal');
+    if (modal) modal.style.display = 'flex';
+};
 
 function drawEncyclopediaCanvas(pref, rate) {
     const canvas = document.getElementById('modal-canvas');
+    if (!canvas) return;
     const ctx = canvas.getContext('2d');
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
@@ -585,18 +695,21 @@ function drawEncyclopediaCanvas(pref, rate) {
     }
 }
 
-function closeEncyclopedia() {
-    document.getElementById('encyclopedia-modal').style.display = 'none';
-}
+window.closeEncyclopedia = function() {
+    const modal = document.getElementById('encyclopedia-modal');
+    if (modal) modal.style.display = 'none';
+};
 
-function openSettings() {
+window.openSettings = function() {
     updateSettingsUI();
-    document.getElementById('settings-modal').style.display = 'flex';
-}
+    const modal = document.getElementById('settings-modal');
+    if (modal) modal.style.display = 'flex';
+};
 
-function closeSettings() {
-    document.getElementById('settings-modal').style.display = 'none';
-}
+window.closeSettings = function() {
+    const modal = document.getElementById('settings-modal');
+    if (modal) modal.style.display = 'none';
+};
 
 function updateSettingsUI() {
     const bgmBtn = document.getElementById('btn-toggle-bgm');
@@ -605,7 +718,7 @@ function updateSettingsUI() {
     if (seBtn) seBtn.innerText = audioSettings.se ? 'ON' : 'OFF';
 }
 
-function toggleBGM() {
+window.toggleBGM = function() {
     audioSettings.bgm = !audioSettings.bgm;
     if (bgmAudio) {
         if (audioSettings.bgm) {
@@ -615,14 +728,14 @@ function toggleBGM() {
         }
     }
     updateSettingsUI();
-}
+};
 
-function toggleSE() {
+window.toggleSE = function() {
     audioSettings.se = !audioSettings.se;
     updateSettingsUI();
-}
+};
 
-function toggleFullscreen() {
+window.toggleFullscreen = function() {
     if (!document.fullscreenElement) {
         document.documentElement.requestFullscreen().catch(err => {
             alert(`全画面表示に失敗しました: ${err.message}`);
@@ -632,4 +745,4 @@ function toggleFullscreen() {
             document.exitFullscreen();
         }
     }
-}
+};

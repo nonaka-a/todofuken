@@ -910,3 +910,19 @@ header h1 {
     object-fit: contain !important;
     filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.0)) !important;
 }
+
+#modal-hammer-select-area {
+    position: absolute;
+    left: 30px;
+    bottom: 25px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    z-index: 10;
+}
+
+#modal-hammer-select-area .hammer-label {
+    font-size: 0.85rem;
+    color: #e0b06b;
+    font-weight: bold;
+}
