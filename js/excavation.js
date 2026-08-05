@@ -563,10 +563,10 @@ function finishExcavation() {
 
     if (isFirstTime && score > 0) {
         if (typeof audioSettings === 'undefined' || audioSettings.se) {
-            const applauseAudio = new Audio('sounds/Applause.mp3');
-            applauseAudio.volume = 0.6;
-            applauseAudio.play().catch(e => console.log("Audio play blocked", e));
-        }
+        const prefVoice = new Audio(`sounds/voice/${activePrefecture.id}.mp3`);
+        prefVoice.volume = 0.8;
+        prefVoice.play().catch(e => console.log("Voice audio play blocked or file missing", e));
+    }
     }
 
     document.getElementById('result-first-tag').style.display = isFirstTime ? 'block' : 'none';
@@ -581,6 +581,12 @@ function finishExcavation() {
             : "土の取り方とパーツの形を見比べてみましょう。";
 
     document.getElementById('result-modal').style.display = 'flex';
+
+    if (typeof audioSettings === 'undefined' || audioSettings.se) {
+        const prefVoice = new Audio(`sounds/voice/${activePrefecture.id}.mp3`);
+        prefVoice.volume = 0.8;
+        prefVoice.play().catch(e => console.log("Voice audio play blocked or file missing", e));
+    }
 }
 
 function closeResult() {
