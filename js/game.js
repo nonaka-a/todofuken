@@ -9,7 +9,71 @@ let playerStats = {
     },
     ownedHammers: ['normal'],
     equippedHammer: 'normal',
-    unlockedRegions: ['ホッカイドー', 'キュウシュー']
+    unlockedRegions: ['ホッカイドー', 'キュウシュー'],
+    tutorialState: {
+        title: false,
+        museum: false,
+        areaSelect: false,
+        excavation: false,
+        firstResult: false
+    }
+};
+
+let currentTutorialQueue = [];
+let currentTutorialCallback = null;
+
+function showTutorial(key, messages, onComplete) {
+    if (!playerStats.tutorialState) {
+        playerStats.tutorialState = {};
+    }
+    if (playerStats.tutorialState[key]) {
+        if (onComplete) onComplete();
+        return;
+    }
+
+    currentTutorialQueue = [...messages];
+    currentTutorialCallback = () => {
+        playerStats.tutorialState[key] = true;
+        saveGame();
+        if (onComplete) onComplete();
+    };
+
+    const overlay = document.getElementById('tutorial-overlay');
+    if (overlay) {
+        overlay.style.display = 'flex';
+        advanceTutorial();
+        requestAnimationFrame(() => {
+            overlay.classList.add('active');
+        });
+    }
+}
+
+window.advanceTutorial = function() {
+    if (currentTutorialQueue.length === 0) {
+        const overlay = document.getElementById('tutorial-overlay');
+        if (overlay) {
+            overlay.classList.remove('active');
+            setTimeout(() => {
+                overlay.style.display = 'none';
+                if (currentTutorialCallback) {
+                    const cb = currentTutorialCallback;
+                    currentTutorialCallback = null;
+                    cb();
+                }
+            }, 300);
+        } else {
+            if (currentTutorialCallback) {
+                const cb = currentTutorialCallback;
+                currentTutorialCallback = null;
+                cb();
+            }
+        }
+        return;
+    }
+
+    const nextText = currentTutorialQueue.shift();
+    const textElem = document.getElementById('tutorial-text');
+    if (textElem) textElem.innerText = nextText;
 };
 
 let audioSettings = {
@@ -95,6 +159,15 @@ async function initGame() {
     if (!playerStats.ownedHammers) playerStats.ownedHammers = ['normal'];
     if (!playerStats.equippedHammer) playerStats.equippedHammer = 'normal';
     if (!playerStats.unlockedRegions) playerStats.unlockedRegions = ['ホッカイドー', 'キュウシュー'];
+    if (!playerStats.tutorialState) {
+        playerStats.tutorialState = {
+            title: false,
+            museum: false,
+            areaSelect: false,
+            excavation: false,
+            firstResult: false
+        };
+    }
 
     if (typeof PREFECTURE_DATA !== 'undefined') {
         PREFECTURE_DATA.forEach(p => {
@@ -115,24 +188,36 @@ async function initGame() {
 }
 
 window.startFromTitle = function() {
-    const fadeOverlay = document.getElementById('fade-overlay');
-    if (!fadeOverlay) return;
+    const titleMessages = [
+        "お待ちしておりました、館長。\nここはあなたの日本列島博物館（にほんれっとうはくぶつかん）です。\nさあ、中へお入りください。"
+    ];
 
-    fadeOverlay.style.opacity = '1';
+    showTutorial('title', titleMessages, () => {
+        const fadeOverlay = document.getElementById('fade-overlay');
+        if (!fadeOverlay) return;
 
-    setTimeout(() => {
-        const header = document.querySelector('header');
-        if (header) header.style.display = 'flex';
-
-        document.querySelectorAll('.screen').forEach(screen => screen.classList.remove('active'));
-        document.getElementById('museum-screen').classList.add('active');
-        renderJapanMap();
-        updateUI();
+        fadeOverlay.style.opacity = '1';
 
         setTimeout(() => {
-            fadeOverlay.style.opacity = '0';
-        }, 150);
-    }, 400);
+            const header = document.querySelector('header');
+            if (header) header.style.display = 'flex';
+
+            document.querySelectorAll('.screen').forEach(screen => screen.classList.remove('active'));
+            document.getElementById('museum-screen').classList.add('active');
+            renderJapanMap();
+            updateUI();
+
+            setTimeout(() => {
+                fadeOverlay.style.opacity = '0';
+                
+                const museumMessages = [
+                    "ここが展示室です。\nあなたの目標は、この日本列島博物館に「47都道府県の化石」\nを集めて展示することです。",
+                    "未だかつて、47都道府県すべての化石をそろえた博物館はありません。\n館長の手で、歴史に名をきざみましょう。"
+                ];
+                showTutorial('museum', museumMessages, null);
+            }, 150);
+        }, 400);
+    });
 };
 
 function saveGame() {
@@ -597,6 +682,11 @@ window.openAreaSelect = function() {
 
     const areaModal = document.getElementById('area-select-modal');
     if (areaModal) areaModal.style.display = 'flex';
+
+    const areaSelectMessages = [
+        "それでは、さっそく化石の発掘（はっくつ）へまいりましょう。\nまずは、化石を探す 地層（ちそう） を選びます。"
+    ];
+    showTutorial('areaSelect', areaSelectMessages, null);
 };
 
 function updateCarousel() {

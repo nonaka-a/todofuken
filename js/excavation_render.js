@@ -73,10 +73,20 @@ function setupGameCanvases() {
         drawRock();
         countInitialRockPixels();
         fossilReady = true;
-        startExcavationTimer();
+
+        const excavationMessages = [
+            "発掘の制限時間は 1分 です。「ハンマー」で周りの硬い岩を崩し、仕上げに「ブラシ」で化石の表面をきれいに磨いてください。 ただし、ハンマーが直接化石に当たると傷ついてしまうためご注意くださいね。"
+        ];
+
+        if (typeof showTutorial === 'function') {
+            showTutorial('excavation', excavationMessages, () => {
+                startExcavationTimer();
+            });
+        } else {
+            startExcavationTimer();
+        }
     };
 }
-
 function drawUnderground() {
     const canvasWidth = underCanvas.width;
     const canvasHeight = underCanvas.height;

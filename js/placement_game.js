@@ -247,6 +247,14 @@ function finishPlacementMiniGame() {
 
         setTimeout(() => {
             fadeOverlay.style.opacity = '0';
+
+            const firstResultMessages = [
+                "お見事です！記念すべき最初の化石が展示されましたね。\nまだ1つですが、ここに47都道府県すべての化石が並ぶ姿を想像すると\n今からとても楽しみです。",
+                "それでは館長、素晴らしい化石との出会いを心より期待しております。"
+            ];
+            if (typeof showTutorial === 'function') {
+                showTutorial('firstResult', firstResultMessages, null);
+            }
         }, 150);
     }, 450);
 }

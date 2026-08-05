@@ -233,6 +233,15 @@
                 </div>
             </div>
         </div>
+
+        <!-- 10. チュートリアル会話モーダル -->
+        <div id="tutorial-overlay" class="modal-overlay" style="z-index: 300;">
+            <div class="tutorial-window" onclick="advanceTutorial()">
+                <div class="tutorial-speaker">助手</div>
+                <div id="tutorial-text" class="tutorial-text"></div>
+                <div class="tutorial-next-indicator">▼ タップしてつぎへ</div>
+            </div>
+        </div>
         
         <!-- 暗転フェード用オーバーレイ -->
         <div id="fade-overlay" style="position: absolute; top: 0; left: 0; width: 1000px; height: 720px; background-color: #000; opacity: 0; pointer-events: none; z-index: 200; transition: opacity 0.4s ease;"></div>
