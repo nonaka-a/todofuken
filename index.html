@@ -30,8 +30,16 @@
             </div>
         </header>
 
-       <!-- 1. 展示画面（メイン） -->
-        <div id="museum-screen" class="screen active">
+       <!-- 0. タイトル画面 -->
+        <div id="title-screen" class="screen active">
+            <div class="title-container">
+                <img src="image/logo.png" alt="日本列島博物館" class="title-logo">
+                <button class="btn btn-accent btn-large btn-title-start" onclick="startFromTitle()">はじめる</button>
+            </div>
+        </div>
+
+        <!-- 1. 展示画面（メイン） -->
+        <div id="museum-screen" class="screen">
             <!-- 独立したアクションボタン -->
             <div class="action-buttons">
                 <button class="btn btn-shop" id="btn-shop" onclick="openShop()">道具を買う</button>

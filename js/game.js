@@ -107,9 +107,33 @@ async function initGame() {
         });
     }
 
+    const header = document.querySelector('header');
+    if (header) header.style.display = 'none';
+
     renderJapanMap();
     updateUI();
 }
+
+window.startFromTitle = function() {
+    const fadeOverlay = document.getElementById('fade-overlay');
+    if (!fadeOverlay) return;
+
+    fadeOverlay.style.opacity = '1';
+
+    setTimeout(() => {
+        const header = document.querySelector('header');
+        if (header) header.style.display = 'flex';
+
+        document.querySelectorAll('.screen').forEach(screen => screen.classList.remove('active'));
+        document.getElementById('museum-screen').classList.add('active');
+        renderJapanMap();
+        updateUI();
+
+        setTimeout(() => {
+            fadeOverlay.style.opacity = '0';
+        }, 150);
+    }, 400);
+};
 
 function saveGame() {
     try {
