@@ -561,14 +561,6 @@ function finishExcavation() {
     playerStats.gold += reward;
     saveGame();
 
-    if (isFirstTime && score > 0) {
-        if (typeof audioSettings === 'undefined' || audioSettings.se) {
-        const prefVoice = new Audio(`sounds/voice/${activePrefecture.id}.mp3`);
-        prefVoice.volume = 0.8;
-        prefVoice.play().catch(e => console.log("Voice audio play blocked or file missing", e));
-    }
-    }
-
     document.getElementById('result-first-tag').style.display = isFirstTime ? 'block' : 'none';
     document.getElementById('result-fossil-img').src = resultImgData;
     document.getElementById('result-pref-display').innerText = `${activePrefecture.name}の化石`;
@@ -583,6 +575,12 @@ function finishExcavation() {
     document.getElementById('result-modal').style.display = 'flex';
 
     if (typeof audioSettings === 'undefined' || audioSettings.se) {
+        if (isFirstTime && score > 0) {
+            const applauseAudio = new Audio('sounds/Applause.mp3');
+            applauseAudio.volume = 0.4;
+            applauseAudio.play().catch(e => console.log("Audio play blocked", e));
+        }
+
         const prefVoice = new Audio(`sounds/voice/${activePrefecture.id}.mp3`);
         prefVoice.volume = 0.8;
         prefVoice.play().catch(e => console.log("Voice audio play blocked or file missing", e));
