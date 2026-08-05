@@ -440,6 +440,7 @@ window.unlockRegion = function(event, regionName) {
         if (!playerStats.unlockedRegions.includes(regionName)) {
             playerStats.unlockedRegions.push(regionName);
         }
+        playerStats.lastRegion = regionName;
         playRegisterSound();
         saveGame();
         updateUI();
