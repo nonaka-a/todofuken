@@ -545,45 +545,52 @@ function finishExcavation() {
     updateScoreDisplay();
 
     const score = excavationScore;
-    const reward = Math.round(score * 2.5);
+    const isSuccess = score >= 40;
     const previousScore = playerStats.excavationRates[activePrefecture.id] || 0;
     const isFirstTime = previousScore === 0;
+    const reward = isSuccess ? Math.round(score * 2.5) : 0;
 
     const resultImgData = captureExcavationResult();
 
-    if (score > previousScore) {
-        playerStats.excavationRates[activePrefecture.id] = score;
-        playerStats.excavationImages[activePrefecture.id] = resultImgData;
+    if (isSuccess) {
+        if (score > previousScore) {
+            playerStats.excavationRates[activePrefecture.id] = score;
+            playerStats.excavationImages[activePrefecture.id] = resultImgData;
+        }
+
+        playerStats.excavationCounts[activePrefecture.id] = (playerStats.excavationCounts[activePrefecture.id] || 0) + 1;
+        playerStats.gold += reward;
+        saveGame();
     }
 
-    playerStats.excavationCounts[activePrefecture.id] = (playerStats.excavationCounts[activePrefecture.id] || 0) + 1;
+    const resultBtn = document.querySelector('#result-modal .btn-accent');
+    if (resultBtn) {
+        resultBtn.innerText = isSuccess ? "展示室にかざる" : "展示室へもどる";
+    }
 
-    playerStats.gold += reward;
-    saveGame();
-
-    document.getElementById('result-first-tag').style.display = isFirstTime ? 'block' : 'none';
+    document.getElementById('result-first-tag').style.display = (isSuccess && isFirstTime) ? 'block' : 'none';
     document.getElementById('result-fossil-img').src = resultImgData;
-    document.getElementById('result-pref-display').innerText = `${activePrefecture.name}の化石`;
+    document.getElementById('result-pref-display').innerText = isSuccess ? `${activePrefecture.name}の化石` : "？？？の化石";
     document.getElementById('result-score').innerText = score;
     document.getElementById('result-reward-gold').innerText = reward;
-    document.getElementById('result-message').innerText = score >= 80
-        ? "見事に形を残して発掘できました！"
-        : score >= 40
-            ? "形は見えてきましたが、もう少し丁寧に掘れそうです。"
-            : "土の取り方とパーツの形を見比べてみましょう。";
+    document.getElementById('result-message').innerText = isSuccess
+        ? (score >= 80 ? "見事に形を残して発掘できました！" : "形は見えてきましたが、もう少し丁寧に掘れそうです。")
+        : "原型をとどめていないため、化石の特定に失敗しました…";
 
     document.getElementById('result-modal').style.display = 'flex';
 
     if (typeof audioSettings === 'undefined' || audioSettings.se) {
-        if (isFirstTime && score > 0) {
+        if (isSuccess && isFirstTime) {
             const applauseAudio = new Audio('sounds/Applause.mp3');
             applauseAudio.volume = 0.4;
             applauseAudio.play().catch(e => console.log("Audio play blocked", e));
         }
 
-        const prefVoice = new Audio(`sounds/voice/${activePrefecture.id}.mp3`);
-        prefVoice.volume = 0.8;
-        prefVoice.play().catch(e => console.log("Voice audio play blocked or file missing", e));
+        if (isSuccess) {
+            const prefVoice = new Audio(`sounds/voice/${activePrefecture.id}.mp3`);
+            prefVoice.volume = 0.8;
+            prefVoice.play().catch(e => console.log("Voice audio play blocked or file missing", e));
+        }
     }
 }
 
@@ -591,7 +598,8 @@ function closeResult() {
     document.getElementById('result-modal').style.display = 'none';
 
     const count = activePrefecture ? (playerStats.excavationCounts[activePrefecture.id] || 0) : 0;
-    const isFirstPlacement = activePrefecture && count === 1 && excavationScore >= 40;
+    const isSuccess = excavationScore >= 40;
+    const isFirstPlacement = activePrefecture && count === 1 && isSuccess;
 
     if (isFirstPlacement) {
         document.querySelectorAll('.screen').forEach(screen => screen.classList.remove('active'));
@@ -600,7 +608,7 @@ function closeResult() {
         checkAndStartPlacement(activePrefecture.id, excavationScore);
     } else {
         returnToMuseum();
-        if (typeof checkAchievementTutorials === 'function') {
+        if (isSuccess && typeof checkAchievementTutorials === 'function') {
             checkAchievementTutorials();
         }
     }
