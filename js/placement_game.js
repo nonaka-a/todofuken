@@ -28,7 +28,11 @@ function startPlacementMiniGame(pref) {
 
     document.getElementById('museum-screen').style.zIndex = '101';
 
-    document.getElementById('placement-title-text').innerText = `${pref.name}のパーツをあてはまる場所まで持っていこう！`;
+    const titleTextElem = document.getElementById('placement-title-text');
+    if (titleTextElem) {
+        titleTextElem.innerText = `${pref.name}のパーツをあてはまる場所まで持っていこう！`;
+        titleTextElem.style.zIndex = '1000';
+    }
 
     const overlay = document.getElementById('placement-overlay');
     overlay.style.display = 'block';

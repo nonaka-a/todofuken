@@ -55,6 +55,9 @@
                 </div>
                 <div class="pedestal"></div>
             </div>
+
+            <!-- デバッグ用：北海道消去ボタン -->
+            <button id="btn-debug-reset-hokkaido" class="btn" onclick="debugResetHokkaido()" style="position: absolute; bottom: 15px; left: 15px; opacity: 0.8; font-size: 0.8rem; padding: 6px 12px; z-index: 50; background: #d32f2f; color: #ffffff; border: 1px solid #ffffff; cursor: pointer;">デバッグ: 北海道消去</button>
         </div>
 
 <!-- お客さんエリア -->
@@ -182,7 +185,7 @@
 
         <!-- 7. パズル設置演出モーダル -->
         <div id="placement-overlay" class="modal-overlay placement-overlay-full">
-            <div id="placement-title-text" style="position: absolute; top: 25px; width: 100%; text-align: center; color: #fff; font-size: 1.6rem; font-weight: bold; text-shadow: 0 2px 8px #000; pointer-events: none; z-index: 102;">
+            <div id="placement-title-text" style="position: absolute; top: 25px; left: 48%; transform: translateX(-50%); width: 100%; text-align: center; color: #fff; font-size: 1.6rem; font-weight: bold; text-shadow: 0 2px 8px #000; pointer-events: none; z-index: 1000;">
                 パーツをあてはまる場所まで持っていこう！
             </div>
             <img id="placement-drag-part" src="" alt="設置パーツ" style="position: absolute; cursor: grab; z-index: 101; display: none; transition: filter 0.2s;">
@@ -243,10 +246,17 @@
                 <div class="tutorial-next-indicator">▼ タップしてつぎへ</div>
             </div>
         </div>
+
+        <!-- 11. 達成演出（グランドフィナーレ）オーバーレイ -->
+        <div id="grand-achievement-overlay" class="grand-achievement-overlay">
+            <div id="grand-achievement-title" class="grand-achievement-title"></div>
+        </div>
         
         <!-- 暗転フェード用オーバーレイ -->
         <div id="fade-overlay" style="position: absolute; top: 0; left: 0; width: 1000px; height: 720px; background-color: #000; opacity: 0; pointer-events: none; z-index: 200; transition: opacity 0.4s ease;"></div>
 
+       <!-- デバッグ用：画面最前面固定ボタン -->
+        <button id="btn-debug-reset-hokkaido" class="btn" onclick="debugResetHokkaido()" style="position: absolute; bottom: 10px; right: 10px; opacity: 0.9; font-size: 0.8rem; padding: 6px 12px; z-index: 999; background: #d32f2f; color: #ffffff; border: 1px solid #ffffff; cursor: pointer;">デバッグ: 北海道消去</button>
     </div>
 
     <!-- エディタから書き出されるJSファイルを読み込ませる -->

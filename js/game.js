@@ -996,6 +996,7 @@ function checkAchievementTutorials(onComplete) {
     if (collectedCount >= 47 && !playerStats.tutorialState.achievement47) {
         queue.push({
             key: 'achievement47',
+            grandTitle: '47都道府県　発掘完了！',
             messages: [
                 "館長、おめでとうございます！ 47すべての都道府県の化石が、この日本列島博物館に展示されました。 日本全国の歴史が、この一つの部屋に集結した圧巻の光景……実に感慨深いです。 \n前人未到の偉業を成し遂げられたこと、心よりほこりに思います。"
             ]
@@ -1006,8 +1007,10 @@ function checkAchievementTutorials(onComplete) {
     if (averageCompletion >= 100 && !playerStats.tutorialState.achievement100) {
         queue.push({
             key: 'achievement100',
+            grandTitle: '日本列島完成度　100%達成！',
             messages: [
-                "館長……すべての都道府県の化石が、完璧な形でこの博物館に揃いました。\n欠けることなく並んだ化石たちが、あたたかな光に照らされて輝いています。なんと美しいのでしょう……\n地道で果てしない発掘の道のりを、最後までやりとげられましたね。 この日本列島博物館は、間違いなく世界に誇る至高の博物館です。本当にお疲れ様でした、館長。"
+                "館長……すべての都道府県の化石が、完璧な形でこの博物館に揃いました。\n欠けることなく並んだ化石たちが、あたたかな光に照らされて輝いています。なんと美しいのでしょう……",
+                "地道で果てしない発掘の道のりを、最後までやりとげられましたね。\nこの日本列島博物館は、間違いなく世界に誇る至高の博物館です。\n本当にお疲れ様でした、館長。"
             ]
         });
     }
@@ -1022,9 +1025,85 @@ function checkAchievementTutorials(onComplete) {
         const item = queue[index];
         playApplauseSound();
         showTutorial(item.key, item.messages, () => {
-            processQueue(index + 1);
+            if (item.grandTitle) {
+                triggerGrandAchievementCutscene(item.grandTitle, () => {
+                    processQueue(index + 1);
+                });
+            } else {
+                processQueue(index + 1);
+            }
         });
     }
-
     processQueue(0);
+}
+
+function debugResetHokkaido() {
+    delete playerStats.excavationRates['hokkaido'];
+    delete playerStats.excavationImages['hokkaido'];
+    delete playerStats.excavationCounts['hokkaido'];
+
+    if (playerStats.tutorialState) {
+        playerStats.tutorialState.achievement47 = false;
+        playerStats.tutorialState.achievement100 = false;
+    }
+
+    saveGame();
+    renderJapanMap();
+    updateUI();
+}
+
+function playKanseiSound() {
+    if (typeof audioSettings === 'undefined' || audioSettings.se) {
+        const audio = new Audio('sounds/kansei.mp3');
+        audio.volume = 0.7;
+        audio.play().catch(e => console.log("Audio play blocked", e));
+    }
+}
+
+function triggerGrandAchievementCutscene(titleText, onComplete) {
+    const overlay = document.getElementById('grand-achievement-overlay');
+    const titleElem = document.getElementById('grand-achievement-title');
+    if (!overlay || !titleElem) {
+        if (onComplete) onComplete();
+        return;
+    }
+
+    titleElem.innerText = titleText;
+    overlay.classList.add('active');
+
+    playKanseiSound();
+
+    // パーティクル（紙吹雪・光）生成
+    const colors = ['#ffd700', '#ff6b6b', '#4ecdc4', '#ffe66d', '#ffffff', '#ff9ff3'];
+    for (let i = 0; i < 70; i++) {
+        const p = document.createElement('div');
+        p.className = 'achievement-particle';
+        p.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+        p.style.left = '50%';
+        p.style.top = '40%';
+        
+        const angle = Math.random() * Math.PI * 2;
+        const dist = 150 + Math.random() * 350;
+        const tx = Math.cos(angle) * dist;
+        const ty = Math.sin(angle) * dist + (Math.random() * 100);
+
+        p.style.setProperty('--p-tx', `${tx}px`);
+        p.style.setProperty('--p-ty', `${ty}px`);
+        p.style.animationDelay = `${Math.random() * 0.3}s`;
+
+        overlay.appendChild(p);
+        setTimeout(() => p.remove(), 2800);
+    }
+
+    const handleClick = () => {
+        overlay.removeEventListener('click', handleClick);
+        overlay.classList.remove('active');
+        setTimeout(() => {
+            if (onComplete) onComplete();
+        }, 500);
+    };
+
+    setTimeout(() => {
+        overlay.addEventListener('click', handleClick);
+    }, 500);
 }
