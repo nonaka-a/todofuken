@@ -253,7 +253,13 @@ function finishPlacementMiniGame() {
                 "それでは館長、素晴らしい化石との出会いを心より期待しております。"
             ];
             if (typeof showTutorial === 'function') {
-                showTutorial('firstResult', firstResultMessages, null);
+                showTutorial('firstResult', firstResultMessages, () => {
+                    if (typeof checkAchievementTutorials === 'function') {
+                        checkAchievementTutorials();
+                    }
+                });
+            } else if (typeof checkAchievementTutorials === 'function') {
+                checkAchievementTutorials();
             }
         }, 150);
     }, 450);

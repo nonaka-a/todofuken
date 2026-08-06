@@ -15,10 +15,13 @@ let playerStats = {
         museum: false,
         areaSelect: false,
         excavation: false,
-        firstResult: false
+        firstResult: false,
+        completedRegions: {},
+        achievement25: false,
+        achievement47: false,
+        achievement100: false
     }
 };
-
 let currentTutorialQueue = [];
 let currentTutorialCallback = null;
 
@@ -165,9 +168,14 @@ async function initGame() {
             museum: false,
             areaSelect: false,
             excavation: false,
-            firstResult: false
+            firstResult: false,
+            completedRegions: {},
+            achievement25: false,
+            achievement47: false,
+            achievement100: false
         };
     }
+    if (!playerStats.tutorialState.completedRegions) playerStats.tutorialState.completedRegions = {};
 
     if (typeof PREFECTURE_DATA !== 'undefined') {
         PREFECTURE_DATA.forEach(p => {
@@ -913,3 +921,110 @@ window.toggleFullscreen = function() {
         }
     }
 };
+
+function playApplauseSound() {
+    if (typeof audioSettings === 'undefined' || audioSettings.se) {
+        const applauseAudio = new Audio('sounds/Applause.mp3');
+        applauseAudio.volume = 0.4;
+        applauseAudio.play().catch(e => console.log("Audio play blocked", e));
+    }
+}
+
+function checkAchievementTutorials(onComplete) {
+    if (typeof PREFECTURE_DATA === 'undefined') {
+        if (onComplete) onComplete();
+        return;
+    }
+
+    const queue = [];
+
+    // 1. 都道府県収集数と完成度の計算
+    let collectedCount = 0;
+    let totalRateSum = 0;
+    const regionStatus = {};
+
+    PREFECTURE_DATA.forEach(p => {
+        const rate = playerStats.excavationRates[p.id] || 0;
+        totalRateSum += rate;
+        if (rate > 0) collectedCount++;
+
+        if (!regionStatus[p.region]) {
+            regionStatus[p.region] = { total: 0, collected: 0 };
+        }
+        regionStatus[p.region].total++;
+        if (rate > 0) regionStatus[p.region].collected++;
+    });
+
+    const averageCompletion = Math.round(totalRateSum / PREFECTURE_DATA.length);
+
+    // 2. 初めて1つの地層（エリア）をコンプリートした時の判定
+    if (!playerStats.tutorialState.completedRegions) {
+        playerStats.tutorialState.completedRegions = {};
+    }
+
+    for (const regionName in regionStatus) {
+        if (regionName === 'ホッカイドー') continue;
+
+        const st = regionStatus[regionName];
+        if (st.collected === st.total && !playerStats.tutorialState.completedRegions[regionName]) {
+            const hasAnyRegionCompletedBefore = Object.values(playerStats.tutorialState.completedRegions).some(val => val === true);
+            playerStats.tutorialState.completedRegions[regionName] = true;
+            saveGame();
+
+            if (!hasAnyRegionCompletedBefore) {
+                queue.push({
+                    key: 'firstRegionComplete_' + regionName,
+                    messages: [
+                        `${regionName}地層の化石がすべて揃いましたね。おめでとうございます。\nこうして一つひとつの地域が埋まっていく様子は、実に美しいですね。 日本列島の歴史が、少しずつこの展示室に息づいていくのを感じます。\nさあ館長、次はどの地域の歴史を掘り起こしに向かいましょうか。`
+                    ]
+                });
+            }
+        }
+    }
+
+    // 3. 25の都道府県を集めた時（折り返し地点）
+    if (collectedCount >= 25 && !playerStats.tutorialState.achievement25) {
+        queue.push({
+            key: 'achievement25',
+            messages: [
+                "これで、25の都道府県を展示できました。\n全体の半分を超えましたね、ここまでのご活躍、本当にお疲れ様です。\n日本列島の半分が、館長の手で鮮やかにいろどられました。 残す都道府県はあと半分です。最後まで静かに見守っております。"
+            ]
+        });
+    }
+
+    // 4. 47の都道府県を集めた時
+    if (collectedCount >= 47 && !playerStats.tutorialState.achievement47) {
+        queue.push({
+            key: 'achievement47',
+            messages: [
+                "館長、おめでとうございます！ 47すべての都道府県の化石が、この日本列島博物館に展示されました。 日本全国の歴史が、この一つの部屋に集結した圧巻の光景……実に感慨深いです。 \n前人未到の偉業を成し遂げられたこと、心よりほこりに思います。"
+            ]
+        });
+    }
+
+    // 5. 都道府県完成度100%
+    if (averageCompletion >= 100 && !playerStats.tutorialState.achievement100) {
+        queue.push({
+            key: 'achievement100',
+            messages: [
+                "館長……すべての都道府県の化石が、完璧な形でこの博物館に揃いました。\n欠けることなく並んだ化石たちが、あたたかな光に照らされて輝いています。なんと美しいのでしょう……\n地道で果てしない発掘の道のりを、最後までやりとげられましたね。 この日本列島博物館は、間違いなく世界に誇る至高の博物館です。本当にお疲れ様でした、館長。"
+            ]
+        });
+    }
+
+    // キューを順番に実行する処理
+    function processQueue(index) {
+        if (index >= queue.length) {
+            if (onComplete) onComplete();
+            return;
+        }
+
+        const item = queue[index];
+        playApplauseSound();
+        showTutorial(item.key, item.messages, () => {
+            processQueue(index + 1);
+        });
+    }
+
+    processQueue(0);
+}

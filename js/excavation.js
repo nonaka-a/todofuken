@@ -600,6 +600,9 @@ function closeResult() {
         checkAndStartPlacement(activePrefecture.id, excavationScore);
     } else {
         returnToMuseum();
+        if (typeof checkAchievementTutorials === 'function') {
+            checkAchievementTutorials();
+        }
     }
 }
 
@@ -608,4 +611,36 @@ function returnToMuseum() {
     document.getElementById('museum-screen').classList.add('active');
     renderJapanMap();
     updateUI();
+}
+
+function debugComplete100() {
+    if (!fossilReady) return;
+
+    // 上層の岩をクリア
+    topCtx.clearRect(0, 0, topCanvas.width, topCanvas.height);
+
+    // ダメージマスクをクリア
+    damageMaskCtx.clearRect(0, 0, damageMaskCanvas.width, damageMaskCanvas.height);
+
+    // 化石レイヤーを再描画（削れた部分を元に戻す）
+    fossilLayerCtx.clearRect(0, 0, fossilLayerCanvas.width, fossilLayerCanvas.height);
+    const image = new Image();
+    image.src = `image/parts/${activePrefecture.id}.png`;
+    image.onload = () => {
+        const scale = Math.min(underCanvas.width / image.width, underCanvas.height / image.height) * 0.75;
+        const drawWidth = image.width * scale;
+        const drawHeight = image.height * scale;
+        const drawX = (underCanvas.width - drawWidth) / 2;
+        const drawY = (underCanvas.height - drawHeight) / 2;
+
+        fossilLayerCtx.drawImage(image, drawX, drawY, drawWidth, drawHeight);
+        drawUnderground();
+
+        excavationScore = 100;
+        updateScoreDisplay();
+    };
+
+    if (image.complete) {
+        image.onload();
+    }
 }
