@@ -199,7 +199,10 @@ function handleEnd() {
     }
 }
 
+
+
 let lastHammerTime = 0;
+let lastFragmentTime = 0;
 
 function scratch(event) {
     if (!fossilReady) return;
@@ -247,7 +250,10 @@ function scratch(event) {
         }
 
         removeRockRandomShape(point.x, point.y, radius, scaleX, scaleY);
-        spawnHammerFragments(point.x, point.y, radius);
+        // spawnHammerFragments の呼び出しは元のまま。間引きロジックは spawnHammerFragments 内部に実装。
+        if (typeof spawnHammerFragments === 'function') {
+            spawnHammerFragments(point.x, point.y, radius);
+        }
     } else if (activeTool === 'brush') {
         playBrushSound();
         
@@ -274,7 +280,8 @@ function checkAreaDamageFossil(centerX, centerY, checkRadius) {
     const startY = Math.max(0, Math.floor(centerY - checkRadius));
     const endX = Math.min(topCanvas.width - 1, Math.ceil(centerX + checkRadius));
     const endY = Math.min(topCanvas.height - 1, Math.ceil(centerY + checkRadius));
-    const step = 4;
+    // モバイル端末での連打処理落ちを防ぐため、サンプリング間隔を拡大
+    const step = 8;
 
     let hasTargetInArea = false;
     let hitX = centerX;
@@ -298,25 +305,8 @@ function checkAreaDamageFossil(centerX, centerY, checkRadius) {
     }
 }
 
-function cleanupTopAlpha(x, y, radius) {
-    const margin = radius + 8;
-    const startX = Math.max(0, Math.floor(x - margin));
-    const startY = Math.max(0, Math.floor(y - margin));
-    const width = Math.min(topCanvas.width - startX, Math.ceil(margin * 2));
-    const height = Math.min(topCanvas.height - startY, Math.ceil(margin * 2));
-
-    if (width <= 0 || height <= 0) return;
-
-    const imgData = topCtx.getImageData(startX, startY, width, height);
-    const data = imgData.data;
-
-    for (let i = 0; i < data.length; i += 4) {
-        if (data[i + 3] < 255) {
-            data[i + 3] = 0;
-        }
-    }
-    topCtx.putImageData(imgData, startX, startY);
-}
+// パフォーマンス低下の原因となっていた cleanupTopAlpha 関数を完全に削除しました。
+// 理由は、destination-out の描画において globalAlpha = 1.0 が適用されていれば、アルファ値のクリーンナップは不要であるためです。
 
 function removeRockRandomShape(centerX, centerY, baseRadius, scaleX = 1.0, scaleY = 1.0) {
     topCtx.save();
@@ -340,8 +330,7 @@ function removeRockRandomShape(centerX, centerY, baseRadius, scaleX = 1.0, scale
     topCtx.fill();
     topCtx.restore();
 
-    const maxScale = Math.max(scaleX, scaleY);
-    cleanupTopAlpha(centerX, centerY, baseRadius * 1.3 * maxScale);
+    // cleanupTopAlpha の呼び出しを削除し、大幅な軽量化を実現。
 }
 
 function removeRockIrregular(centerX, centerY, baseRadius, opacity) {
@@ -581,9 +570,15 @@ function finishExcavation() {
 
     if (typeof audioSettings === 'undefined' || audioSettings.se) {
         if (isSuccess && isFirstTime) {
-            const applauseAudio = new Audio('sounds/Applause.mp3');
-            applauseAudio.volume = 0.4;
-            applauseAudio.play().catch(e => console.log("Audio play blocked", e));
+            if (typeof globalApplauseAudio !== 'undefined' && globalApplauseAudio) {
+                globalApplauseAudio.currentTime = 0;
+                globalApplauseAudio.volume = 0.4;
+                globalApplauseAudio.play().catch(e => console.log("Audio play blocked", e));
+            } else {
+                const applauseAudio = new Audio('sounds/Applause.mp3');
+                applauseAudio.volume = 0.4;
+                applauseAudio.play().catch(e => console.log("Audio play blocked", e));
+            }
         }
 
         if (isSuccess) {

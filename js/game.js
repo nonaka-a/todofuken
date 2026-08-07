@@ -195,7 +195,19 @@ async function initGame() {
     updateUI();
 }
 
+let globalApplauseAudio = null;
+
 window.startFromTitle = function() {
+    // iOS/iPadOSのオーディオ再生制限を解除するためのプリロード
+    if (!globalApplauseAudio) {
+        globalApplauseAudio = new Audio('sounds/Applause.mp3');
+        globalApplauseAudio.volume = 0.4;
+    }
+    globalApplauseAudio.play().then(() => {
+        globalApplauseAudio.pause();
+        globalApplauseAudio.currentTime = 0;
+    }).catch(e => console.log("Audio unlock failed", e));
+
     const titleMessages = [
         "お待ちしておりました、館長。\nここはあなたの日本列島博物館（にほんれっとうはくぶつかん）です。\nさあ、中へお入りください。"
     ];

@@ -225,15 +225,21 @@ function startFragmentAnimationLoop() {
 }
 
 function spawnHammerFragments(x, y, radius) {
+    const now = Date.now();
+    // 連打時（120ms以内）は破片生成頻度および数を抑えてDOM負荷を軽減
+    const isRapid = (typeof lastFragmentTime !== 'undefined') ? (now - lastFragmentTime < 120) : false;
+    if (typeof lastFragmentTime !== 'undefined') lastFragmentTime = now;
+
     const container = document.getElementById('canvas-container');
-    const count = 6 + Math.floor(Math.random() * 4);
+    const count = isRapid ? (1 + Math.floor(Math.random() * 2)) : (3 + Math.floor(Math.random() * 3));
+
     for (let i = 0; i < count; i++) {
         const frag = document.createElement('div');
         frag.className = 'hammer-fragment';
         frag.style.position = 'absolute';
         frag.style.backgroundColor = '#6d4c41';
         frag.style.border = '1px solid #3e2723';
-        const size = 6 + Math.random() * 12;
+        const size = 5 + Math.random() * 8;
         frag.style.width = `${size}px`;
         frag.style.height = `${size}px`;
         frag.style.left = `${x}px`;
@@ -243,11 +249,11 @@ function spawnHammerFragments(x, y, radius) {
         frag.style.zIndex = '15'; 
 
         const angle = Math.random() * Math.PI * 2;
-        const dist = 20 + Math.random() * radius;
+        const dist = 15 + Math.random() * radius;
         const tx = Math.cos(angle) * dist;
-        const ty = Math.sin(angle) * dist + 30; 
+        const ty = Math.sin(angle) * dist + 20; 
 
-        frag.style.transition = 'transform 1s cubic-bezier(0.25, 1, 0.5, 1), opacity 1s ease-in';
+        frag.style.transition = 'transform 0.6s cubic-bezier(0.25, 1, 0.5, 1), opacity 0.6s ease-in';
         container.appendChild(frag);
 
         requestAnimationFrame(() => {
@@ -255,7 +261,8 @@ function spawnHammerFragments(x, y, radius) {
             frag.style.opacity = '0';
         });
 
-        setTimeout(() => frag.remove(), 1000);
+        // 破片の生存時間を短くしてDOMの蓄積を防ぐ
+        setTimeout(() => frag.remove(), 600);
     }
 }
 
