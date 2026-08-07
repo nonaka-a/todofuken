@@ -257,8 +257,8 @@ function scratch(event) {
     } else if (activeTool === 'brush') {
         playBrushSound();
         
-        let radius = 16;
-        let opacity = 0.15; 
+        let radius = 18;
+        let opacity = 0.18; 
 
         if (brushLevel === 2) {
             radius = 26;   
