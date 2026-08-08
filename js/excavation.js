@@ -215,6 +215,7 @@ function handleEnd() {
 
 let lastHammerTime = 0;
 let lastFragmentTime = 0;
+let lastBrushTime = 0;
 
 function scratch(event) {
     if (!fossilReady) return;
@@ -267,6 +268,11 @@ function scratch(event) {
             spawnHammerFragments(point.x, point.y, radius);
         }
     } else if (activeTool === 'brush') {
+        const now = Date.now();
+        // iPadでの高速スワイプ時に描画とDOM生成が暴走してフリーズするのを防ぐため、40ms間隔に制御
+        if (now - lastBrushTime < 40) return;
+        lastBrushTime = now;
+
         playBrushSound();
         
         let radius = 18;
@@ -611,7 +617,7 @@ function finishExcavation() {
             }, 100);
         }
     }
-    }
+}
 
 function closeResult() {
     document.getElementById('result-modal').style.display = 'none';
