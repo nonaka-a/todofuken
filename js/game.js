@@ -198,15 +198,22 @@ async function initGame() {
 let globalApplauseAudio = null;
 
 window.startFromTitle = function() {
-    // iOS/iPadOSのオーディオ再生制限を解除するためのプリロード
-    if (!globalApplauseAudio) {
-        globalApplauseAudio = new Audio('sounds/Applause.mp3');
-        globalApplauseAudio.volume = 0.4;
+    // iOS/iPadOSのオーディオ再生制限を解除するための非同期アンロック（例外でも処理を止めない）
+    try {
+        if (!globalApplauseAudio) {
+            globalApplauseAudio = new Audio('sounds/Applause.mp3');
+            globalApplauseAudio.volume = 0.4;
+        }
+        const playPromise = globalApplauseAudio.play();
+        if (playPromise !== undefined) {
+            playPromise.then(() => {
+                globalApplauseAudio.pause();
+                globalApplauseAudio.currentTime = 0;
+            }).catch(e => console.log("Audio unlock muted/blocked", e));
+        }
+    } catch(e) {
+        console.log("Audio unlock skipped", e);
     }
-    globalApplauseAudio.play().then(() => {
-        globalApplauseAudio.pause();
-        globalApplauseAudio.currentTime = 0;
-    }).catch(e => console.log("Audio unlock failed", e));
 
     const titleMessages = [
         "お待ちしておりました、館長。\nここはあなたの日本列島博物館（にほんれっとうはくぶつかん）です。\nさあ、中へお入りください。"
@@ -214,31 +221,37 @@ window.startFromTitle = function() {
 
     showTutorial('title', titleMessages, () => {
         const fadeOverlay = document.getElementById('fade-overlay');
-        if (!fadeOverlay) return;
+        if (!fadeOverlay) {
+            transitionToMuseum();
+            return;
+        }
 
         fadeOverlay.style.opacity = '1';
 
         setTimeout(() => {
-            const header = document.querySelector('header');
-            if (header) header.style.display = 'flex';
-
-            document.querySelectorAll('.screen').forEach(screen => screen.classList.remove('active'));
-            document.getElementById('museum-screen').classList.add('active');
-            renderJapanMap();
-            updateUI();
-
+            transitionToMuseum();
             setTimeout(() => {
                 fadeOverlay.style.opacity = '0';
                 
                 const museumMessages = [
                     "ここが展示室です。\nあなたの目標は、この日本列島博物館に「47都道府県の化石」\nを集めて展示することです。",
-                    "これまでに、47都道府県すべての化石をそろえた博物館はありません。\n館長の手で、歴史に名をきざみましょう。"
+                    "未だかつて、47都道府県すべての化石をそろえた博物館はありません。\n館長の手で、歴史に名をきざみましょう。"
                 ];
                 showTutorial('museum', museumMessages, null);
             }, 150);
         }, 400);
     });
 };
+
+function transitionToMuseum() {
+    const header = document.querySelector('header');
+    if (header) header.style.display = 'flex';
+
+    document.querySelectorAll('.screen').forEach(screen => screen.classList.remove('active'));
+    document.getElementById('museum-screen').classList.add('active');
+    renderJapanMap();
+    updateUI();
+}
 
 function saveGame() {
     try {
