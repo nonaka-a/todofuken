@@ -582,24 +582,36 @@ function finishExcavation() {
 
     if (typeof audioSettings === 'undefined' || audioSettings.se) {
         if (isSuccess && isFirstTime) {
-            if (typeof globalApplauseAudio !== 'undefined' && globalApplauseAudio) {
-                globalApplauseAudio.currentTime = 0;
-                globalApplauseAudio.volume = 0.4;
-                globalApplauseAudio.play().catch(e => console.log("Audio play blocked", e));
-            } else {
-                const applauseAudio = new Audio('sounds/Applause.mp3');
-                applauseAudio.volume = 0.4;
-                applauseAudio.play().catch(e => console.log("Audio play blocked", e));
-            }
+            // iPad等のiOS端末向けにWeb Audio再生の確実性を高める処理
+            let playApplause = () => {
+                if (typeof globalApplauseAudio !== 'undefined' && globalApplauseAudio) {
+                    globalApplauseAudio.currentTime = 0;
+                    globalApplauseAudio.volume = 0.4;
+                    globalApplauseAudio.play().catch(e => {
+                        console.log("Global applause play failed, retrying with fallback", e);
+                        const fallbackAudio = new Audio('sounds/Applause.mp3');
+                        fallbackAudio.volume = 0.4;
+                        fallbackAudio.play().catch(err => console.log("Fallback applause blocked", err));
+                    });
+                } else {
+                    const applauseAudio = new Audio('sounds/Applause.mp3');
+                    applauseAudio.volume = 0.4;
+                    applauseAudio.play().catch(e => console.log("Audio play blocked", e));
+                }
+            };
+            playApplause();
         }
 
         if (isSuccess) {
-            const prefVoice = new Audio(`sounds/voice/${activePrefecture.id}.mp3`);
-            prefVoice.volume = 0.8;
-            prefVoice.play().catch(e => console.log("Voice audio play blocked or file missing", e));
+            // ボイスとの再生タイミングが重なってブロックされるのを防ぐためわずかに遅延させる
+            setTimeout(() => {
+                const prefVoice = new Audio(`sounds/voice/${activePrefecture.id}.mp3`);
+                prefVoice.volume = 0.8;
+                prefVoice.play().catch(e => console.log("Voice audio play blocked or file missing", e));
+            }, 100);
         }
     }
-}
+    }
 
 function closeResult() {
     document.getElementById('result-modal').style.display = 'none';
