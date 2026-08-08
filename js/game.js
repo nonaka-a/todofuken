@@ -198,21 +198,22 @@ async function initGame() {
 let globalApplauseAudio = null;
 
 window.startFromTitle = function() {
-    // iOS/iPadOSのオーディオ再生制限を解除するための非同期アンロック（例外でも処理を止めない）
+    // Web Audio API による完全無音の音声アンロック（音が出ないように修正）
     try {
-        if (!globalApplauseAudio) {
-            globalApplauseAudio = new Audio('sounds/Applause.mp3');
-            globalApplauseAudio.volume = 0.4;
-        }
-        const playPromise = globalApplauseAudio.play();
-        if (playPromise !== undefined) {
-            playPromise.then(() => {
-                globalApplauseAudio.pause();
-                globalApplauseAudio.currentTime = 0;
-            }).catch(e => console.log("Audio unlock muted/blocked", e));
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        if (AudioContext) {
+            const unlockCtx = new AudioContext();
+            if (unlockCtx.state === 'suspended') {
+                unlockCtx.resume();
+            }
+            const buffer = unlockCtx.createBuffer(1, 1, 22050);
+            const source = unlockCtx.createBufferSource();
+            source.buffer = buffer;
+            source.connect(unlockCtx.destination);
+            source.start(0);
         }
     } catch(e) {
-        console.log("Audio unlock skipped", e);
+        console.log("AudioContext unlock skipped", e);
     }
 
     const titleMessages = [
