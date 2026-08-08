@@ -29,10 +29,22 @@ function startAreaExcavation(regionName) {
     playerStats.lastRegion = regionName;
     saveGame();
 
+    // 地域の全都道府県が一度以上発掘済み（全パーツ発見済み）かチェック
+    const isAllDiscovered = prefs.every(p => (playerStats.excavationRates[p.id] || 0) > 0);
+
     const weightedPrefs = [];
     prefs.forEach(p => {
         const rate = playerStats.excavationRates[p.id] || 0;
-        const weight = rate === 0 ? 5 : 1;
+        let weight = 1;
+
+        if (isAllDiscovered) {
+            // 全パーツ発見後は、100%未満の都道府県の確率を大幅にアップ（重み10）
+            weight = rate < 100 ? 10 : 1;
+        } else {
+            // 未発掘がある場合は、未発見の都道府県を優先（重み5）
+            weight = rate === 0 ? 5 : 1;
+        }
+
         for (let i = 0; i < weight; i++) {
             weightedPrefs.push(p);
         }
