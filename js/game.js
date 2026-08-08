@@ -670,9 +670,19 @@ window.openAreaSelect = function() {
             : `<button class="btn btn-accent btn-start-excavate" ${playerStats.gold < 500 ? 'disabled' : ''} onclick="unlockRegion(event, '${regionName}')">解放する (500 G)</button>`;
 
         const lockImgHtml = isUnlocked ? '' : `<img src="image/lock.png" class="locked-icon" alt="ロック">`;
+        const isCompleted = (foundCount === totalCount && totalCount > 0);
+        const isPerfect = isCompleted && regionPrefs.every(p => (playerStats.excavationRates[p.id] || 0) === 100);
+
+        let trophyImgHtml = '';
+        if (isPerfect) {
+            trophyImgHtml = `<img src="image/Trophy2.png" class="area-trophy-icon" alt="パーフェクトコンプリート">`;
+        } else if (isCompleted) {
+            trophyImgHtml = `<img src="image/Trophy.png" class="area-trophy-icon" alt="コンプリート">`;
+        }
 
         card.innerHTML = `
             ${lockImgHtml}
+            ${trophyImgHtml}
             <div>
                 <h4>${regionName}地層 <span style="font-size: 0.95rem; font-weight: normal; color: #6d3f1f;">(${foundCount}/${totalCount})</span></h4>
                 <div class="area-info-item">

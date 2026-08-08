@@ -960,6 +960,18 @@ header h1 {
     filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.6));
 }
 
+.area-trophy-icon {
+    position: absolute;
+    bottom: 77px;
+    right: 20px;
+    width: 85px;
+    height: 85px;
+    object-fit: contain;
+    z-index: 0;
+    pointer-events: none;
+    filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.35));
+}
+
 /* タイトル画面 */
 #title-screen {
     top: 0;
