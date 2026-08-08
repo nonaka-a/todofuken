@@ -37,12 +37,12 @@ function startAreaExcavation(regionName) {
         const rate = playerStats.excavationRates[p.id] || 0;
         let weight = 1;
 
-        if (isAllDiscovered) {
-            // 全パーツ発見後は、100%未満の都道府県の確率を大幅にアップ（重み10）
-            weight = rate < 100 ? 10 : 1;
+         if (isAllDiscovered) {
+            // 全パーツ発見後：100%未満の都道府県が出やすくなるよう重み15に設定
+            weight = rate < 100 ? 15 : 1;
         } else {
-            // 未発掘がある場合は、未発見の都道府県を優先（重み5）
-            weight = rate === 0 ? 5 : 1;
+            // 未発掘がある場合：未発見の都道府県が出やすくなるよう重み15に設定
+            weight = rate === 0 ? 15 : 1;
         }
 
         for (let i = 0; i < weight; i++) {
