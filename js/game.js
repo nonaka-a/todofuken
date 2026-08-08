@@ -26,7 +26,10 @@ let currentTutorialQueue = [];
 let currentTutorialCallback = null;
 
 function showTutorial(key, messages, onComplete) {
-    if (!playerStats.tutorialState) {
+    if (!playerStats || typeof playerStats !== 'object') {
+        playerStats = {};
+    }
+    if (!playerStats.tutorialState || typeof playerStats.tutorialState !== 'object') {
         playerStats.tutorialState = {};
     }
     if (playerStats.tutorialState[key]) {
@@ -34,7 +37,14 @@ function showTutorial(key, messages, onComplete) {
         return;
     }
 
-    currentTutorialQueue = [...messages];
+    currentTutorialQueue = Array.isArray(messages) ? [...messages] : [];
+    if (currentTutorialQueue.length === 0) {
+        playerStats.tutorialState[key] = true;
+        saveGame();
+        if (onComplete) onComplete();
+        return;
+    }
+
     currentTutorialCallback = () => {
         playerStats.tutorialState[key] = true;
         saveGame();
@@ -48,6 +58,8 @@ function showTutorial(key, messages, onComplete) {
         requestAnimationFrame(() => {
             overlay.classList.add('active');
         });
+    } else {
+        if (onComplete) onComplete();
     }
 }
 
