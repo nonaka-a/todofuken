@@ -1020,19 +1020,24 @@ function checkAchievementTutorials(onComplete) {
             key: 'achievement47',
             grandTitle: '47都道府県　発掘完了！',
             messages: [
-                "館長、おめでとうございます！ 47すべての都道府県の化石が、この日本列島博物館に展示されました。 日本全国の歴史が、この一つの部屋に集結した圧巻の光景……実に感慨深いです。 \n前人未到の偉業を成し遂げられたこと、心よりほこりに思います。"
+                "館長、おめでとうございます！ 47すべての都道府県の化石が、この日本列島博物館に展示されました。 \n日本全国の歴史が、この一つの部屋に集められたすばらしい景色……実に感動します。 \n前人未到（ぜんじんみとう）の偉業を成しとげられたこと、心よりほこりに思います。"
             ]
         });
     }
 
-    // 5. 都道府県完成度100%
-    if (averageCompletion >= 100 && !playerStats.tutorialState.achievement100) {
+   // 5. 都道府県完成度100%（全8地層で全ての都道府県が100%達成＝Trophy2条件を満たしていることを必須条件に追加）
+    const allRegionsPerfect = Object.keys(regionStatus).every(regionName => {
+        const regionPrefs = PREFECTURE_DATA.filter(p => p.region === regionName);
+        return regionPrefs.length > 0 && regionPrefs.every(p => (playerStats.excavationRates[p.id] || 0) === 100);
+    });
+
+    if (averageCompletion >= 100 && allRegionsPerfect && !playerStats.tutorialState.achievement100) {
         queue.push({
             key: 'achievement100',
             grandTitle: '日本列島完成度　100%達成！',
             messages: [
                 "館長……すべての都道府県の化石が、完璧な形でこの博物館に揃いました。\n欠けることなく並んだ化石たちが、あたたかな光に照らされて輝いています。なんと美しいのでしょう……",
-                "地道で果てしない発掘の道のりを、最後までやりとげられましたね。\nこの日本列島博物館は、間違いなく世界に誇る至高の博物館です。\n本当にお疲れ様でした、館長。"
+                "地道で果てしない発掘の道のりを、最後までやりとげられましたね。\nこの日本列島博物館は、間違いなく世界にほこる至高の博物館です。\n本当にお疲れ様でした、館長。"
             ]
         });
     }
