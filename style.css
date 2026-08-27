@@ -1144,3 +1144,31 @@ header h1 {
     left: 35% !important;
     transform: translateX(-50%) !important;
 }
+
+.btn-external-link {
+    position: absolute;
+    bottom: 20px;
+    right: 20px;
+    background: linear-gradient(180deg, #a96f35 0%, #7b451f 52%, #542b12 100%);
+    color: #fff;
+    border: 1px solid rgba(255, 225, 160, 0.45);
+    padding: 8px 16px;
+    font-size: 0.9rem;
+    font-weight: bold;
+    text-decoration: none;
+    border-radius: 20px;
+    box-shadow: inset 0 1px rgba(255, 239, 193, 0.3), 0 3px 0 #351908, 0 6px 10px rgba(0, 0, 0, 0.28);
+    transition: transform 0.15s, filter 0.15s, box-shadow 0.15s;
+    font-family: inherit;
+    z-index: 10;
+}
+
+.btn-external-link:hover {
+    filter: brightness(1.12);
+    transform: translateY(-2px);
+}
+
+.btn-external-link:active {
+    transform: translateY(2px);
+    box-shadow: inset 0 1px rgba(255, 239, 193, 0.2), 0 1px 0 #351908;
+}
